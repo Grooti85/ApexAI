@@ -1,5 +1,8 @@
 # ApexAI
-AI race engineer for Assetto Corsa Competizione.
+Desktop AI race engineer for Assetto Corsa Competizione.
+
+This repository is desktop-only: the shipped product is the Windows WPF
+executable `ApexAI.exe`. There is no browser application or web build.
 
 ## Windows app
 

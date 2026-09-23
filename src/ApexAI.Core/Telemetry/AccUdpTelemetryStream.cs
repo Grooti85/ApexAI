@@ -71,7 +71,7 @@ public sealed class AccUdpTelemetryStream : ITelemetryStream
         }
     }
 
-    internal static bool TryParse(ReadOnlySpan<byte> payload, out TelemetrySnapshot snapshot)
+    public static bool TryParse(ReadOnlySpan<byte> payload, out TelemetrySnapshot snapshot)
     {
         snapshot = default!;
         try

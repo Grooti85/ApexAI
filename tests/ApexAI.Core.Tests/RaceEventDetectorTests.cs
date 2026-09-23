@@ -13,7 +13,7 @@ public sealed class RaceEventDetectorTests
         detector.Detect(State(fuel: 8, lapFuel: 3.5));
         var events = detector.Detect(State(fuel: 6, lapFuel: 3.5));
         Assert.Contains(events, item => item.Type == RaceEventType.LowFuel);
-        Assert.Empty(detector.Detect(State(fuel: 5.5, lapFuel: 3.5)).Where(item => item.Type == RaceEventType.LowFuel));
+        Assert.DoesNotContain(detector.Detect(State(fuel: 5.5, lapFuel: 3.5)), item => item.Type == RaceEventType.LowFuel);
     }
 
     [Fact]
