@@ -1,0 +1,43 @@
+name: Build and test
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet restore ApexAI.sln
+      - run: dotnet build ApexAI.sln --no-restore --configuration Release
+      - run: dotnet test tests/ApexAI.Core.Tests/ApexAI.Core.Tests.csproj --no-build --configuration Release
+      - run: dotnet publish src/ApexAI.Wpf/ApexAI.Wpf.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+      - shell: pwsh
+        run: |
+          if (-not (Test-Path publish\ApexAI.exe)) { throw "Published executable was not produced." }
+
+  package:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet publish src/ApexAI.Wpf/ApexAI.Wpf.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+      - shell: pwsh
+        run: |
+          Copy-Item README.md publish\README.md
+          Compress-Archive -Path publish\* -DestinationPath ApexAI-win-x64.zip
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: ApexAI-win-x64.zip
