@@ -39,7 +39,8 @@
         <RowDefinition Height="*"/>
         <RowDefinition Height="Auto"/>
       </Grid.RowDefinitions>
-      <Grid x:Name="HeaderPanel" MouseLeftButtonDown="HeaderMouseLeftButtonDown">
+      <Grid x:Name="HeaderPanel" Background="Transparent"
+            PreviewMouseLeftButtonDown="HeaderMouseLeftButtonDown">
         <StackPanel Orientation="Horizontal">
           <Border Background="#FFE52B3A" CornerRadius="5" Padding="7,3" VerticalAlignment="Center">
             <TextBlock Text="AI" Foreground="White" FontSize="12" FontWeight="Bold"/>

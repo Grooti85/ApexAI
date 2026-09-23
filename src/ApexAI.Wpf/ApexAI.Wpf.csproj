@@ -12,7 +12,7 @@
     <Description>Always-on-top AI race engineer overlay for Assetto Corsa Competizione.</Description>
     <Company>ApexAI</Company>
     <ApplicationIcon />
-    <Version>0.2.1</Version>
+    <Version>0.2.2</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
