@@ -2,11 +2,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApexAI.Core", "src\ApexAI.Core\ApexAI.Core.csproj", "{0C6A6C34-0B60-4DC0-8B52-1C0D14A1DE01}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApexAI Core", "src\ApexAI.Core\ApexAI.Core.csproj", "{0C6A6C34-0B60-4DC0-8B52-1C0D14A1DE01}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApexAI.Wpf", "src\ApexAI.Wpf\ApexAI.Wpf.csproj", "{CE5E6B2D-54D5-4A85-B8D3-6BBA1A0E6A4C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApexAI Desktop", "src\ApexAI.Wpf\ApexAI.Wpf.csproj", "{CE5E6B2D-54D5-4A85-B8D3-6BBA1A0E6A4C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApexAI.Core.Tests", "tests\ApexAI.Core.Tests\ApexAI.Core.Tests.csproj", "{2F4AB0E8-6B36-4DD0-9D4D-A2C9A24C7D0F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApexAI Tests", "tests\ApexAI.Core.Tests\ApexAI.Core.Tests.csproj", "{2F4AB0E8-6B36-4DD0-9D4D-A2C9A24C7D0F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
