@@ -73,8 +73,9 @@ deterministic engineer message is shown instead.
   `127.0.0.1:9000` and that Windows Firewall allows the app.
 - **No AI response:** verify the API key and endpoint; offline fallback is
   expected and safe.
-- **Window is in the way:** drag it by the header, use `Settings` to adjust
-  width, height, and opacity, or use `Close`.
+- **Window is in the way:** drag from anywhere across the top ApexAI header,
+  including its empty space. The `Settings` and `Close` buttons remain
+  clickable in the footer; use `Settings` to adjust width, height, and opacity.
 - **Build fails with SDK not found:** install the .NET 8 SDK, not only the
   runtime. WPF builds require Windows Desktop targeting support.
 

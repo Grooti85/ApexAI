@@ -85,7 +85,11 @@ public partial class MainWindow : Window
 
     private void HeaderMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ButtonState == MouseButtonState.Pressed) DragMove();
+        if (e.ButtonState == MouseButtonState.Pressed)
+        {
+            DragMove();
+            e.Handled = true;
+        }
     }
 
     private async Task ResolveEngineerMessageAsync(RaceEvent raceEvent)
