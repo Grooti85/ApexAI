@@ -1,6 +1,9 @@
 # ApexAI
 Desktop AI race engineer for Assetto Corsa Competizione.
 
+**Product:** ApexAI
+**Repository:** [Grooti85/ApexAI](https://github.com/Grooti85/ApexAI)
+
 This repository is desktop-only: the shipped product is the Windows WPF
 executable `ApexAI.exe`. There is no browser application or web build.
 
@@ -12,8 +15,8 @@ the game, injects input, or automates driving.
 
 ## One-click install (GitHub Releases)
 
-Tagged releases publish `ApexAI-win-x64.zip`. Download it from the **Releases**
-section of this GitHub profile, extract it anywhere, and run `ApexAI.exe`. The package is
+Tagged releases publish `ApexAI-win-x64.zip`. Download it from the **ApexAI Releases**
+section, extract it anywhere, and run `ApexAI.exe`. The package is
 self-contained and does not require installing .NET. Windows SmartScreen may
 ask for confirmation because early releases are not code-signed.
 

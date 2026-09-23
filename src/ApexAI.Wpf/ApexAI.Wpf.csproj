@@ -7,8 +7,12 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>ApexAI</AssemblyName>
     <RootNamespace>ApexAI.Wpf</RootNamespace>
+    <AssemblyTitle>ApexAI</AssemblyTitle>
+    <Product>ApexAI</Product>
+    <Description>Always-on-top AI race engineer overlay for Assetto Corsa Competizione.</Description>
+    <Company>ApexAI</Company>
     <ApplicationIcon />
-    <Version>0.1.0</Version>
+    <Version>0.2.1</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
