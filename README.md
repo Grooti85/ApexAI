@@ -7,7 +7,7 @@ executable `ApexAI.exe`. There is no browser application or web build.
 ## Windows app
 
 The desktop app is a .NET 8 WPF executable (`ApexAI.exe`) in `src/ApexAI.Wpf`. It is always on
-top, transparent, draggable, and safe to use alongside ACC. It never drives
+top, draggable, and safe to use alongside ACC. It never drives
 the game, injects input, or automates driving.
 
 ## One-click install (GitHub Releases)
@@ -70,7 +70,8 @@ deterministic engineer message is shown instead.
   `127.0.0.1:9000` and that Windows Firewall allows the app.
 - **No AI response:** verify the API key and endpoint; offline fallback is
   expected and safe.
-- **Window is in the way:** drag it by any empty area and use `Close`.
+- **Window is in the way:** drag it by the header, use `Settings` to adjust
+  width, height, and opacity, or use `Close`.
 - **Build fails with SDK not found:** install the .NET 8 SDK, not only the
   runtime. WPF builds require Windows Desktop targeting support.
 
@@ -79,4 +80,6 @@ deterministic engineer message is shown instead.
 `ITelemetryProvider`/`ITelemetryStream` isolate ACC transport, `RaceState` and
 `RaceEventDetector` provide deterministic domain logic, and
 `IEngineerMessageService` is the seam for AI. CI runs on Windows and tagged
-releases produce a self-contained `win-x64` archive.
+releases produce a self-contained `win-x64` archive. The same workflow can be
+run manually from GitHub Actions to validate and download the archive as a
+workflow artifact without creating a release.

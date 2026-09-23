@@ -26,10 +26,12 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _settings = _settingsStore.Load();
+        Width = Math.Clamp(_settings.OverlayWidth, 520, 1100);
+        Height = Math.Clamp(_settings.OverlayHeight, 360, 800);
+        Opacity = Math.Clamp(_settings.OverlayOpacity, 0.65, 1);
         _latestSnapshot = _mockTelemetry.Read();
         _udpTelemetry = CreateTelemetryStream(_settings.TelemetryPort);
         _engineer = CreateEngineerService(_settings);
-        MouseLeftButtonDown += (_, _) => DragMove();
         _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
         _timer.Tick += UpdateOverlay;
         _timer.Start();
@@ -43,13 +45,20 @@ public partial class MainWindow : Window
         var packetAge = DateTimeOffset.UtcNow - state.Timestamp;
         var live = _udpTelemetry.IsRunning && packetAge < TimeSpan.FromSeconds(2);
         ConnectionText.Text = live ? "ACC CONNECTED" : "MOCK MODE";
-        ConnectionText.Foreground = live ? System.Windows.Media.Brushes.LightGreen : System.Windows.Media.Brushes.Orange;
+        var statusBrush = live ? System.Windows.Media.Brushes.LightGreen : System.Windows.Media.Brushes.Orange;
+        ConnectionText.Foreground = statusBrush;
+        ConnectionDot.Fill = statusBrush;
         var transportStatus = _udpTelemetry.LastError is null
             ? $"Listening for ACC UDP on {_settings.TelemetryPort}"
             : $"ACC UDP unavailable; using mock telemetry ({_udpTelemetry.LastError})";
-        ModeText.Text = $"{transportStatus}\n{(_settings.Provider == EngineerProvider.Offline ? "OFFLINE ENGINEER" : "AI ENGINEER + FALLBACK")}";
+        TransportText.Text = transportStatus;
+        ModeText.Text = _settings.Provider == EngineerProvider.Offline ? "OFFLINE\nENGINEER" : "AI ENGINEER\n+ FALLBACK";
         StatusText.Text = $"{state.Phase}  •  Lap {state.LapNumber}  •  {state.SpeedKph:0} km/h";
-        RaceText.Text = $"Fuel {state.FuelLiters:0.0} L  |  Tyres {state.TyreTemperatureCelsius:0}°C  |  {state.LapProgress:P0}";
+        SpeedText.Text = $"{state.SpeedKph:0}";
+        FuelText.Text = $"{state.FuelLiters:0.0}";
+        TyreText.Text = $"{state.TyreTemperatureCelsius:0}";
+        LapText.Text = $"{state.LapNumber:00}";
+        ProgressText.Text = $"{state.LapProgress:P0} complete";
         var raceEvent = _detector.Detect(state).OrderBy(item => item.Priority).FirstOrDefault();
         if (raceEvent is null)
         {
@@ -74,6 +83,11 @@ public partial class MainWindow : Window
 
     private void CloseClick(object sender, RoutedEventArgs e) => Close();
 
+    private void HeaderMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ButtonState == MouseButtonState.Pressed) DragMove();
+    }
+
     private async Task ResolveEngineerMessageAsync(RaceEvent raceEvent)
     {
         try
@@ -96,6 +110,9 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog() != true) return;
         _settings = dialog.Settings;
         _settingsStore.Save(_settings);
+        Width = Math.Clamp(_settings.OverlayWidth, 520, 1100);
+        Height = Math.Clamp(_settings.OverlayHeight, 360, 800);
+        Opacity = Math.Clamp(_settings.OverlayOpacity, 0.65, 1);
         if (!string.IsNullOrWhiteSpace(dialog.ApiKey))
             new DpapiSecretStore().Set("engineer-api-key", dialog.ApiKey);
         _engineer = CreateEngineerService(_settings);
