@@ -1,5 +1,6 @@
 using ApexAI.Core.Race;
 using ApexAI.Core.Telemetry;
+using Xunit;
 
 namespace ApexAI.Core.Tests;
 

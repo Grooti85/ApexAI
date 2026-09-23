@@ -1,5 +1,6 @@
 using System.Text;
 using ApexAI.Core.Telemetry;
+using Xunit;
 
 namespace ApexAI.Core.Tests;
 
