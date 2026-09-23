@@ -76,7 +76,7 @@ public sealed class AccUdpTelemetryStream : ITelemetryStream
         snapshot = default!;
         try
         {
-            using var document = JsonDocument.Parse(payload);
+            using var document = JsonDocument.Parse(payload.ToArray());
             var root = document.RootElement;
             var timestamp = root.TryGetProperty("timestamp", out var time)
                 && DateTimeOffset.TryParse(time.GetString(), CultureInfo.InvariantCulture,
