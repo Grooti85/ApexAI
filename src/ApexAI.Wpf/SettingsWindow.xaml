@@ -1,31 +1,52 @@
 <Window x:Class="ApexAI.Wpf.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="ApexAI Settings" Width="520" Height="700" WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize" Background="#FF121318" Foreground="#FFF4F5F7">
+        Title="ApexAI Settings" Width="560" Height="790" MinHeight="680"
+        WindowStartupLocation="CenterOwner" Background="#FF121318" Foreground="#FFF4F5F7">
   <Grid Margin="22">
     <Grid.RowDefinitions>
-      <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-      <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-      <RowDefinition Height="*"/><RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
-    <TextBlock Text="ApexAI settings" Foreground="White" FontSize="23" FontWeight="SemiBold" Margin="0,0,0,18"/>
-    <TextBlock Grid.Row="1" Text="ACC broadcasting client" Foreground="#FFF13846" FontSize="14" FontWeight="Bold" Margin="0,0,0,8"/>
-    <TextBlock Grid.Row="2" Text="ACC UDP port (must match broadcasting.json)" Foreground="#FFB8C5D6"/>
-    <TextBox x:Name="PortBox" Grid.Row="3" Margin="0,4,0,8" Padding="6"/>
-    <TextBlock Grid.Row="4" Text="Connection password (DPAPI protected locally)" Foreground="#FFB8C5D6"/>
-    <PasswordBox x:Name="ConnectionPasswordBox" Grid.Row="5" Margin="0,4,0,8" Padding="6"/>
-    <TextBlock Grid.Row="6" Text="Command password (DPAPI protected locally)" Foreground="#FFB8C5D6"/>
-    <PasswordBox x:Name="CommandPasswordBox" Grid.Row="7" Margin="0,4,0,10" Padding="6"/>
-    <StackPanel Grid.Row="8">
-      <TextBlock Text="Compact overlay size (separate from this dashboard)" Foreground="#FFF13846" FontSize="13" FontWeight="Bold" Margin="0,8,0,8"/>
-      <Grid>
-        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-        <StackPanel Margin="0,0,8,0"><TextBlock Text="Width (320-700)" Foreground="#FFB8BBC5"/><TextBox x:Name="WidthBox" Margin="0,4,0,0" Padding="5"/></StackPanel>
-        <StackPanel Grid.Column="1" Margin="8,0,0,0"><TextBlock Text="Height (160-500)" Foreground="#FFB8BBC5"/><TextBox x:Name="HeightBox" Margin="0,4,0,0" Padding="5"/></StackPanel>
-      </Grid>
-    </StackPanel>
-    <StackPanel Grid.Row="10" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+      <StackPanel>
+        <TextBlock Text="ApexAI settings" Foreground="White" FontSize="23" FontWeight="SemiBold" Margin="0,0,0,18"/>
+        <TextBlock Text="AI Mentor provider" Foreground="#FFF13846" FontSize="14" FontWeight="Bold" Margin="0,0,0,8"/>
+        <TextBlock Text="Offline disables AI requests. OpenAI-compatible works with hosted providers and local Ollama (for example, http://localhost:11434/v1/chat/completions)." Foreground="#FFB8BBC5" TextWrapping="Wrap" Margin="0,0,0,8"/>
+        <ComboBox x:Name="ProviderBox" Padding="6" Margin="0,0,0,10" SelectedIndex="0">
+          <ComboBoxItem Content="Offline"/>
+          <ComboBoxItem Content="OpenAI-compatible"/>
+        </ComboBox>
+        <TextBlock Text="Chat completions endpoint" Foreground="#FFB8C5D6"/>
+        <TextBox x:Name="EndpointBox" Margin="0,4,0,8" Padding="6"/>
+        <TextBlock Text="Model name" Foreground="#FFB8C5D6"/>
+        <TextBox x:Name="ModelBox" Margin="0,4,0,8" Padding="6"/>
+        <TextBlock Text="Provider API key (stored only with Windows DPAPI; optional for local Ollama)" Foreground="#FFB8C5D6" TextWrapping="Wrap"/>
+        <PasswordBox x:Name="ApiKeyBox" Margin="0,4,0,8" Padding="6"/>
+        <TextBlock Text="Request timeout (5-180 seconds)" Foreground="#FFB8C5D6"/>
+        <TextBox x:Name="TimeoutBox" Margin="0,4,0,18" Padding="6"/>
+        <TextBlock Text="ACC broadcasting client" Foreground="#FFF13846" FontSize="14" FontWeight="Bold" Margin="0,0,0,8"/>
+        <TextBlock Text="ACC UDP port (must match broadcasting.json)" Foreground="#FFB8C5D6"/>
+        <TextBox x:Name="PortBox" Margin="0,4,0,8" Padding="6"/>
+        <TextBlock Text="Connection password (DPAPI protected locally)" Foreground="#FFB8C5D6"/>
+        <PasswordBox x:Name="ConnectionPasswordBox" Margin="0,4,0,8" Padding="6"/>
+        <TextBlock Text="Command password (DPAPI protected locally)" Foreground="#FFB8C5D6"/>
+        <PasswordBox x:Name="CommandPasswordBox" Margin="0,4,0,18" Padding="6"/>
+        <TextBlock Text="Compact overlay size (separate from this dashboard)" Foreground="#FFF13846" FontSize="13" FontWeight="Bold" Margin="0,0,0,8"/>
+        <Grid>
+          <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+          <StackPanel Margin="0,0,8,12">
+            <TextBlock Text="Width (320-700)" Foreground="#FFB8BBC5"/>
+            <TextBox x:Name="WidthBox" Margin="0,4,0,0" Padding="5"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Margin="8,0,0,12">
+            <TextBlock Text="Height (160-500)" Foreground="#FFB8BBC5"/>
+            <TextBox x:Name="HeightBox" Margin="0,4,0,0" Padding="5"/>
+          </StackPanel>
+        </Grid>
+      </StackPanel>
+    </ScrollViewer>
+    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
       <Button Content="Cancel" IsCancel="True" Padding="12,5" Margin="0,0,8,0"/>
       <Button Content="Save" IsDefault="True" Padding="12,5" Click="SaveClick"/>
     </StackPanel>

@@ -11,7 +11,8 @@ public sealed record EngineerSettings(
     int TelemetryPort = 9000,
     double OverlayWidth = 390,
     double OverlayHeight = 185,
-    double OverlayOpacity = 0.94);
+    double OverlayOpacity = 0.94,
+    int AiTimeoutSeconds = 45);
 
 public sealed class EngineerSettingsStore
 {

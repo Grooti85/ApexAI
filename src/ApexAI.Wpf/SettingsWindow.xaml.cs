@@ -16,6 +16,11 @@ public partial class SettingsWindow : Window
         get => CommandPasswordBox.Password;
         set => CommandPasswordBox.Password = value;
     }
+    public string ApiKey
+    {
+        get => ApiKeyBox.Password;
+        set => ApiKeyBox.Password = value;
+    }
 
     public SettingsWindow(EngineerSettings settings)
     {
@@ -24,6 +29,10 @@ public partial class SettingsWindow : Window
         PortBox.Text = settings.TelemetryPort.ToString();
         WidthBox.Text = settings.OverlayWidth.ToString("0");
         HeightBox.Text = settings.OverlayHeight.ToString("0");
+        ProviderBox.SelectedIndex = settings.Provider == EngineerProvider.OpenAiCompatible ? 1 : 0;
+        EndpointBox.Text = settings.Endpoint;
+        ModelBox.Text = settings.Model;
+        TimeoutBox.Text = settings.AiTimeoutSeconds.ToString();
     }
 
     private void SaveClick(object sender, RoutedEventArgs e)
@@ -41,11 +50,35 @@ public partial class SettingsWindow : Window
                 "Invalid settings", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
+        var provider = ProviderBox.SelectedIndex == 1
+            ? EngineerProvider.OpenAiCompatible
+            : EngineerProvider.Offline;
+        if (!int.TryParse(TimeoutBox.Text, out var timeout) || timeout is < 5 or > 180)
+        {
+            MessageBox.Show("AI request timeout must be between 5 and 180 seconds.", "Invalid settings",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        if (provider == EngineerProvider.OpenAiCompatible &&
+            (!Uri.TryCreate(EndpointBox.Text, UriKind.Absolute, out var endpoint) ||
+             endpoint.Scheme is not ("https" or "http") ||
+             endpoint.Scheme == "http" && !endpoint.IsLoopback ||
+             !string.IsNullOrEmpty(endpoint.UserInfo) || !string.IsNullOrEmpty(endpoint.Query) ||
+             !string.IsNullOrEmpty(endpoint.Fragment) || string.IsNullOrWhiteSpace(ModelBox.Text)))
+        {
+            MessageBox.Show("Enter a model and a valid HTTPS chat-completions URL, or loopback HTTP URL for a local provider; URL credentials and query parameters are not allowed.",
+                "Invalid AI provider settings", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
         Settings = Settings with
         {
             TelemetryPort = port,
             OverlayWidth = width,
-            OverlayHeight = height
+            OverlayHeight = height,
+            Provider = provider,
+            Endpoint = EndpointBox.Text.Trim(),
+            Model = ModelBox.Text.Trim(),
+            AiTimeoutSeconds = timeout
         };
         DialogResult = true;
     }

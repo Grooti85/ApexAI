@@ -54,9 +54,17 @@ The supported ACC broadcast packets supply session type/phase, focused car, trac
 
 The standard ACC broadcasting interface does **not** supply fuel, tyre temperatures, steering/brake traces, or corner-by-corner telemetry. ApexAI leaves those values unavailable and does not generate advice about them. Sessions without enough valid laps are explicitly reported as a baseline rather than assigned invented comparisons. Session records are local and are not uploaded.
 
+## AI Mentor
+
+The **AI Mentor** is a real chat-completions integration, not a set of canned responses. It is **offline by default**. To use an online provider, open **Settings**, select **OpenAI-compatible**, enter its chat-completions endpoint and model, and provide the API key. For example, OpenAI's endpoint is `https://api.openai.com/v1/chat/completions`; use a model enabled for your account. The API key is stored separately from `settings.json` and protected with Windows DPAPI for the current Windows user. ApexAI does not log the key or include it in settings JSON.
+
+Hosted AI requires the user's provider key and may incur usage charges under that provider's pricing. In each chat request ApexAI sends the question, recent conversation turns, and a compact context made from the locally persisted ACC session summaries, recorded lap times/validity, and analysis of the newest session. That context explicitly marks unsupported telemetry as unavailable. The AI provider receives that context; session history is otherwise kept local. The mentor is instructed not to invent telemetry or claim generic suggestions are derived from recorded data. Verify AI-generated coaching before acting on it.
+
+For a no-key, free local option, install [Ollama](https://ollama.com/), download a model such as `qwen2.5` with `ollama pull qwen2.5`, then configure **OpenAI-compatible** with endpoint `http://localhost:11434/v1/chat/completions`, model `qwen2.5`, and a blank key. HTTP is accepted only for loopback local endpoints; non-local providers must use HTTPS. Local model quality and response speed depend on your hardware. Requests can be cancelled in the chat UI, and endpoint, provider, and timeout errors are shown rather than replaced with mock answers.
+
 ## Scope
 
-AI mentor workflows, an AI provider settings surface, a skill tree, and a practice lab are not part of this initial coaching slice.
+A skill tree and a practice lab are not part of this release.
 
 ## Troubleshooting
 
@@ -69,4 +77,4 @@ AI mentor workflows, an AI provider settings surface, a skill tree, and a practi
 
 ## Architecture
 
-`AccUdpTelemetryStream` performs the ACC broadcasting handshake and binary packet parsing behind `ITelemetryStream`. The telemetry model keeps unavailable ACC fields nullable. `SessionRecorder` persists only ACC-sourced sessions and laps; `SessionAnalysis` calculates reports and selects the next mission from completed-lap evidence. The WPF dashboard and optional overlay both consume those same snapshots. CI builds/tests on Windows and packages a self-contained `win-x64` archive.
+`AccUdpTelemetryStream` performs the ACC broadcasting handshake and binary packet parsing behind `ITelemetryStream`. The telemetry model keeps unavailable ACC fields nullable. `SessionRecorder` persists only ACC-sourced sessions and laps; `SessionAnalysis` calculates reports and selects the next mission from completed-lap evidence. `MentorContextBuilder` creates a bounded factual context from persisted session records, and `AiMentorChatService` sends it to a configured OpenAI-compatible endpoint with cancellation and timeout handling. The WPF dashboard and optional overlay both consume the same telemetry snapshots. CI builds/tests on Windows and packages a self-contained `win-x64` archive.

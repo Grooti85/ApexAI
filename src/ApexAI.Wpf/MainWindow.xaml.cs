@@ -1,4 +1,5 @@
 using System.Net.Sockets;
+using System.Net.Http;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -6,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using ApexAI.Core.Configuration;
+using ApexAI.Core.Engineer;
 using ApexAI.Core.Sessions;
 using ApexAI.Core.Telemetry;
 
@@ -16,6 +18,8 @@ public partial class MainWindow : Window
     private readonly MockTelemetryProvider _demoTelemetry = new();
     private readonly DispatcherTimer _timer;
     private readonly EngineerSettingsStore _settingsStore = new();
+    private readonly DpapiSecretStore _secretStore = new();
+    private readonly HttpClient _mentorHttp = new() { Timeout = Timeout.InfiniteTimeSpan };
     private readonly SessionRecorder? _sessionRecorder;
     private readonly string? _storageError;
     private AccUdpTelemetryStream _udpTelemetry;
@@ -26,6 +30,9 @@ public partial class MainWindow : Window
     private int _lastSessionRevision = -1;
     private string? _lastAutoSelectedCompletedSessionId;
     private readonly AccBroadcastingSetupService _accSetup = new(new DpapiSecretStore());
+    private readonly List<MentorChatMessage> _mentorConversation = [];
+    private CancellationTokenSource? _mentorRequest;
+    private const string MentorApiKeySecretKey = "mentor-api-key";
 
     public MainWindow()
     {
@@ -47,10 +54,13 @@ public partial class MainWindow : Window
         Closed += (_, _) =>
         {
             _timer.Stop();
+            _mentorRequest?.Cancel();
             _udpTelemetry.Dispose();
+            _mentorHttp.Dispose();
             _overlay?.Close();
         };
         RefreshSessions();
+        UpdateMentorStatus();
         ShowSection("dashboard");
         UpdateDashboard(this, EventArgs.Empty);
     }
@@ -205,14 +215,17 @@ public partial class MainWindow : Window
         DashboardPage.Visibility = section == "dashboard" ? Visibility.Visible : Visibility.Collapsed;
         SessionsPage.Visibility = section == "sessions" ? Visibility.Visible : Visibility.Collapsed;
         MissionPage.Visibility = section == "mission" ? Visibility.Visible : Visibility.Collapsed;
+        MentorPage.Visibility = section == "mentor" ? Visibility.Visible : Visibility.Collapsed;
         DashboardNav.Foreground = section == "dashboard" ? Brushes.White : new SolidColorBrush(Color.FromRgb(183, 184, 192));
         SessionsNav.Foreground = section == "sessions" ? Brushes.White : new SolidColorBrush(Color.FromRgb(183, 184, 192));
         MissionNav.Foreground = section == "mission" ? Brushes.White : new SolidColorBrush(Color.FromRgb(183, 184, 192));
+        MentorNav.Foreground = section == "mentor" ? Brushes.White : new SolidColorBrush(Color.FromRgb(183, 184, 192));
     }
 
     private void DashboardClick(object sender, RoutedEventArgs e) => ShowSection("dashboard");
     private void SessionsClick(object sender, RoutedEventArgs e) => ShowSection("sessions");
     private void MissionClick(object sender, RoutedEventArgs e) => ShowSection("mission");
+    private void MentorClick(object sender, RoutedEventArgs e) => ShowSection("mentor");
     private void CloseClick(object sender, RoutedEventArgs e) => Close();
     private void DemoClick(object sender, RoutedEventArgs e) => _demoMode = !_demoMode;
 
@@ -235,21 +248,48 @@ public partial class MainWindow : Window
 
     private void SettingsClick(object sender, RoutedEventArgs e)
     {
-        var secretStore = new DpapiSecretStore();
-        var oldConnectionPassword = secretStore.Get(AccBroadcastingSetupService.ConnectionSecretKey) ?? string.Empty;
-        var oldCommandPassword = secretStore.Get(AccBroadcastingSetupService.CommandSecretKey) ?? string.Empty;
+        var secretStore = _secretStore;
+        string oldConnectionPassword;
+        string oldCommandPassword;
+        string apiKey;
+        try
+        {
+            oldConnectionPassword = secretStore.Get(AccBroadcastingSetupService.ConnectionSecretKey) ?? string.Empty;
+            oldCommandPassword = secretStore.Get(AccBroadcastingSetupService.CommandSecretKey) ?? string.Empty;
+            apiKey = secretStore.Get(MentorApiKeySecretKey) ?? string.Empty;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+            or System.Security.Cryptography.CryptographicException or System.ComponentModel.Win32Exception)
+        {
+            MessageBox.Show(this, "A locally protected credential could not be read. Verify the current Windows user and local ApexAI data before changing settings.",
+                "Credential unavailable", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
         var dialog = new SettingsWindow(_settings)
         {
             Owner = this,
             ConnectionPassword = oldConnectionPassword,
-            CommandPassword = oldCommandPassword
+            CommandPassword = oldCommandPassword,
+            ApiKey = apiKey
         };
         if (dialog.ShowDialog() != true) return;
         var oldPort = _settings.TelemetryPort;
-        _settings = dialog.Settings;
-        _settingsStore.Save(_settings);
-        StorePassword(secretStore, AccBroadcastingSetupService.ConnectionSecretKey, dialog.ConnectionPassword);
-        StorePassword(secretStore, AccBroadcastingSetupService.CommandSecretKey, dialog.CommandPassword);
+        try
+        {
+            StorePassword(secretStore, MentorApiKeySecretKey, dialog.ApiKey);
+            StorePassword(secretStore, AccBroadcastingSetupService.ConnectionSecretKey, dialog.ConnectionPassword);
+            StorePassword(secretStore, AccBroadcastingSetupService.CommandSecretKey, dialog.CommandPassword);
+            _settingsStore.Save(dialog.Settings);
+            _settings = dialog.Settings;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+            or System.Security.Cryptography.CryptographicException or System.ComponentModel.Win32Exception)
+        {
+            MessageBox.Show(this, $"Settings could not be saved securely: {exception.Message}", "Settings error",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+        UpdateMentorStatus();
         _overlay?.SetSize(_settings.OverlayWidth, _settings.OverlayHeight);
         _overlay?.SetOpacity(_settings.OverlayOpacity);
         if (oldPort != _settings.TelemetryPort ||
@@ -260,6 +300,93 @@ public partial class MainWindow : Window
             _latestLiveSnapshot = null;
             _udpTelemetry = CreateTelemetryStream(_settings.TelemetryPort);
         }
+    }
+
+    private void UpdateMentorStatus()
+    {
+        bool keyIsSet;
+        try
+        {
+            keyIsSet = !string.IsNullOrWhiteSpace(_secretStore.Get(MentorApiKeySecretKey));
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+            or System.Security.Cryptography.CryptographicException or System.ComponentModel.Win32Exception)
+        {
+            MentorStatusText.Text = "A locally protected provider key could not be read. Verify the current Windows user and local ApexAI data.";
+            return;
+        }
+        MentorStatusText.Text = _settings.Provider == EngineerProvider.Offline
+            ? "Offline. Configure an OpenAI-compatible provider in Settings to enable AI chat."
+            : keyIsSet
+                ? $"Ready · requests go to {_settings.Endpoint}. Hosted provider usage may cost money."
+                : "Ready · no API key is stored. Local Ollama needs none; hosted providers usually require a key.";
+    }
+
+    private async void MentorSendClick(object sender, RoutedEventArgs e)
+    {
+        var question = MentorInputBox.Text.Trim();
+        if (question.Length == 0) return;
+        if (_settings.Provider != EngineerProvider.OpenAiCompatible)
+        {
+            MentorStatusText.Text = "AI Mentor is offline. Configure a provider in Settings before sending a message.";
+            return;
+        }
+
+        MentorInputBox.Clear();
+        AppendMentorMessage("You", question);
+        MentorSendButton.IsEnabled = false;
+        MentorCancelButton.Visibility = Visibility.Visible;
+        MentorStatusText.Text = "Contacting AI provider…";
+        _mentorRequest = new CancellationTokenSource();
+        try
+        {
+            var context = MentorContextBuilder.Build(
+                _sessionRecorder?.Sessions ?? [],
+                historyUnavailable: _sessionRecorder is null && _storageError is not null);
+            var service = new AiMentorChatService(_mentorHttp, _settings,
+                _secretStore.Get(MentorApiKeySecretKey));
+            var previousConversation = _mentorConversation.ToArray();
+            _mentorConversation.Add(new MentorChatMessage("user", question));
+            var answer = await service.AskAsync(context, previousConversation, question, _mentorRequest.Token);
+            _mentorConversation.Add(new MentorChatMessage("assistant", answer));
+            AppendMentorMessage("Mentor", answer);
+            MentorStatusText.Text = $"Connected · {_settings.Model} · responses may be inaccurate; verify before acting.";
+        }
+        catch (OperationCanceledException) when (_mentorRequest?.IsCancellationRequested == true)
+        {
+            MentorStatusText.Text = "Request cancelled.";
+        }
+        catch (MentorProviderException exception)
+        {
+            MentorStatusText.Text = exception.Message;
+            AppendMentorMessage("Request failed", exception.Message);
+        }
+        catch (InvalidOperationException exception)
+        {
+            MentorStatusText.Text = exception.Message;
+            AppendMentorMessage("Request failed", exception.Message);
+        }
+        catch (Exception exception) when (exception is System.ComponentModel.Win32Exception
+            or System.Security.Cryptography.CryptographicException or IOException or UnauthorizedAccessException)
+        {
+            MentorStatusText.Text = "The locally stored provider key could not be read. Re-enter it in Settings.";
+            AppendMentorMessage("Request failed", MentorStatusText.Text);
+        }
+        finally
+        {
+            _mentorRequest?.Dispose();
+            _mentorRequest = null;
+            MentorSendButton.IsEnabled = true;
+            MentorCancelButton.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void MentorCancelClick(object sender, RoutedEventArgs e) => _mentorRequest?.Cancel();
+
+    private void AppendMentorMessage(string speaker, string message)
+    {
+        MentorConversationBox.AppendText($"{speaker}\n{message}\n\n");
+        MentorConversationBox.ScrollToEnd();
     }
 
     private async void SetupAccClick(object sender, RoutedEventArgs e)
