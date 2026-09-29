@@ -22,6 +22,13 @@ jobs:
       - shell: pwsh
         run: |
           if (-not (Test-Path publish\ApexAI.exe)) { throw "Published executable was not produced." }
+          Copy-Item README.md publish\README.md
+          Compress-Archive -Path publish\* -DestinationPath ApexAI-win-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ApexAI-win-x64-preview
+          path: ApexAI-win-x64.zip
+          if-no-files-found: error
 
   package:
     if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || github.event_name == 'workflow_dispatch'

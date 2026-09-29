@@ -20,6 +20,7 @@ public partial class MainWindow : Window
     private readonly EngineerSettingsStore _settingsStore = new();
     private readonly DpapiSecretStore _secretStore = new();
     private readonly HttpClient _mentorHttp = new() { Timeout = Timeout.InfiniteTimeSpan };
+    private readonly LocalAiSetupService _localAiSetup = new();
     private readonly SessionRecorder? _sessionRecorder;
     private readonly string? _storageError;
     private AccUdpTelemetryStream _udpTelemetry;
@@ -32,6 +33,12 @@ public partial class MainWindow : Window
     private readonly AccBroadcastingSetupService _accSetup = new(new DpapiSecretStore());
     private readonly List<MentorChatMessage> _mentorConversation = [];
     private CancellationTokenSource? _mentorRequest;
+    private LocalAiStatus _localAiStatus = new(LocalAiState.SetupRequired,
+        "Setup required · choose Set up free local AI to get started. Nothing downloads without your consent.");
+    private LocalAiSetupWindow? _localAiSetupWindow;
+    private DateTimeOffset _lastLocalAiStatusCheck;
+    private bool _checkingLocalAiStatus;
+    private bool _isClosing;
     private const string MentorApiKeySecretKey = "mentor-api-key";
 
     public MainWindow()
@@ -53,12 +60,16 @@ public partial class MainWindow : Window
         _timer.Start();
         Closed += (_, _) =>
         {
+            _isClosing = true;
             _timer.Stop();
             _mentorRequest?.Cancel();
+            _localAiSetupWindow?.Close();
+            _localAiSetup.Dispose();
             _udpTelemetry.Dispose();
             _mentorHttp.Dispose();
             _overlay?.Close();
         };
+        Loaded += MainWindowLoaded;
         RefreshSessions();
         UpdateMentorStatus();
         ShowSection("dashboard");
@@ -67,6 +78,9 @@ public partial class MainWindow : Window
 
     private void UpdateDashboard(object? sender, EventArgs e)
     {
+        if (_settings.Provider == EngineerProvider.LocalOllama &&
+            DateTimeOffset.UtcNow - _lastLocalAiStatusCheck > TimeSpan.FromSeconds(10))
+            _ = RefreshLocalAiStatusAsync();
         var isLive = _latestLiveSnapshot is { } latest &&
                      DateTimeOffset.UtcNow - latest.Timestamp < TimeSpan.FromSeconds(2);
         if (isLive && _latestLiveSnapshot is { } liveSnapshot)
@@ -290,6 +304,7 @@ public partial class MainWindow : Window
             return;
         }
         UpdateMentorStatus();
+        _lastLocalAiStatusCheck = DateTimeOffset.MinValue;
         _overlay?.SetSize(_settings.OverlayWidth, _settings.OverlayHeight);
         _overlay?.SetOpacity(_settings.OverlayOpacity);
         if (oldPort != _settings.TelemetryPort ||
@@ -304,6 +319,19 @@ public partial class MainWindow : Window
 
     private void UpdateMentorStatus()
     {
+        LocalAiSetupButton.Visibility = _settings.Provider == EngineerProvider.LocalOllama
+            ? Visibility.Visible : Visibility.Collapsed;
+        if (_settings.Provider == EngineerProvider.LocalOllama)
+        {
+            MentorStatusText.Text = _localAiStatus.Message;
+            _ = RefreshLocalAiStatusAsync();
+            return;
+        }
+        if (_settings.Provider == EngineerProvider.Offline)
+        {
+            MentorStatusText.Text = "AI is disabled. Choose local AI or an optional hosted provider in Settings.";
+            return;
+        }
         bool keyIsSet;
         try
         {
@@ -315,21 +343,28 @@ public partial class MainWindow : Window
             MentorStatusText.Text = "A locally protected provider key could not be read. Verify the current Windows user and local ApexAI data.";
             return;
         }
-        MentorStatusText.Text = _settings.Provider == EngineerProvider.Offline
-            ? "Offline. Configure an OpenAI-compatible provider in Settings to enable AI chat."
-            : keyIsSet
-                ? $"Ready · requests go to {_settings.Endpoint}. Hosted provider usage may cost money."
-                : "Ready · no API key is stored. Local Ollama needs none; hosted providers usually require a key.";
+        MentorStatusText.Text = keyIsSet
+            ? "Optional hosted provider selected. Requests may incur charges under the provider's pricing."
+            : "Optional hosted provider selected. Configure its key in Settings; provider usage may incur charges.";
     }
 
     private async void MentorSendClick(object sender, RoutedEventArgs e)
     {
         var question = MentorInputBox.Text.Trim();
         if (question.Length == 0) return;
-        if (_settings.Provider != EngineerProvider.OpenAiCompatible)
+        if (_settings.Provider == EngineerProvider.Offline)
         {
-            MentorStatusText.Text = "AI Mentor is offline. Configure a provider in Settings before sending a message.";
+            MentorStatusText.Text = "AI is disabled. Choose local AI or an optional hosted provider in Settings.";
             return;
+        }
+        if (_settings.Provider == EngineerProvider.LocalOllama)
+        {
+            await RefreshLocalAiStatusAsync();
+            if (_localAiStatus.State != LocalAiState.Ready)
+            {
+                MentorStatusText.Text = _localAiStatus.Message;
+                return;
+            }
         }
 
         MentorInputBox.Clear();
@@ -343,14 +378,17 @@ public partial class MainWindow : Window
             var context = MentorContextBuilder.Build(
                 _sessionRecorder?.Sessions ?? [],
                 historyUnavailable: _sessionRecorder is null && _storageError is not null);
-            var service = new AiMentorChatService(_mentorHttp, _settings,
-                _secretStore.Get(MentorApiKeySecretKey));
+            var apiKey = _settings.Provider == EngineerProvider.OpenAiCompatible
+                ? _secretStore.Get(MentorApiKeySecretKey) : null;
+            var service = new AiMentorChatService(_mentorHttp, _settings, apiKey);
             var previousConversation = _mentorConversation.ToArray();
             _mentorConversation.Add(new MentorChatMessage("user", question));
             var answer = await service.AskAsync(context, previousConversation, question, _mentorRequest.Token);
             _mentorConversation.Add(new MentorChatMessage("assistant", answer));
             AppendMentorMessage("Mentor", answer);
-            MentorStatusText.Text = $"Connected · {_settings.Model} · responses may be inaccurate; verify before acting.";
+            MentorStatusText.Text = _settings.Provider == EngineerProvider.LocalOllama
+                ? $"Ready · local {_settings.Model} · responses may be inaccurate; verify before acting."
+                : $"Hosted provider response · usage may incur charges; verify before acting.";
         }
         catch (OperationCanceledException) when (_mentorRequest?.IsCancellationRequested == true)
         {
@@ -382,6 +420,61 @@ public partial class MainWindow : Window
     }
 
     private void MentorCancelClick(object sender, RoutedEventArgs e) => _mentorRequest?.Cancel();
+
+    private void MainWindowLoaded(object sender, RoutedEventArgs e)
+    {
+        UpdateMentorStatus();
+        if (_settings.Provider != EngineerProvider.LocalOllama || _settings.LocalAiSetupPromptSeen) return;
+
+        _settings = _settings with { LocalAiSetupPromptSeen = true };
+        try { _settingsStore.Save(_settings); }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            MentorStatusText.Text = $"Could not save the first-run setup choice: {exception.Message}";
+        }
+        OpenLocalAiSetup();
+    }
+
+    private async Task RefreshLocalAiStatusAsync()
+    {
+        if (_checkingLocalAiStatus || _settings.Provider != EngineerProvider.LocalOllama) return;
+        _checkingLocalAiStatus = true;
+        _lastLocalAiStatusCheck = DateTimeOffset.UtcNow;
+        try
+        {
+            _localAiStatus = await _localAiSetup.GetStatusAsync();
+            if (_settings.Provider == EngineerProvider.LocalOllama && _mentorRequest is null)
+                MentorStatusText.Text = _localAiStatus.Message;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+            or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            _localAiStatus = new(LocalAiState.Error, $"Local AI status check failed: {exception.Message}");
+            if (_settings.Provider == EngineerProvider.LocalOllama)
+                MentorStatusText.Text = _localAiStatus.Message;
+        }
+        finally { _checkingLocalAiStatus = false; }
+    }
+
+    private void LocalAiSetupClick(object sender, RoutedEventArgs e) => OpenLocalAiSetup();
+
+    private void OpenLocalAiSetup()
+    {
+        if (_localAiSetupWindow is { IsVisible: true })
+        {
+            _localAiSetupWindow.Activate();
+            return;
+        }
+        _localAiSetupWindow = new LocalAiSetupWindow(_localAiSetup) { Owner = this };
+        _localAiSetupWindow.Closed += (_, _) =>
+        {
+            _localAiSetupWindow = null;
+            if (_isClosing) return;
+            _lastLocalAiStatusCheck = DateTimeOffset.MinValue;
+            _ = RefreshLocalAiStatusAsync();
+        };
+        _localAiSetupWindow.Show();
+    }
 
     private void AppendMentorMessage(string speaker, string message)
     {

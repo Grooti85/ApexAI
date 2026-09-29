@@ -44,6 +44,17 @@ public sealed class EngineerSettingsTests
     }
 
     [Fact]
+    public void DefaultsToFreeLocalAiWithoutHostedCredentials()
+    {
+        var settings = new EngineerSettings();
+
+        Assert.Equal(EngineerProvider.LocalOllama, settings.Provider);
+        Assert.Equal("http://127.0.0.1:11434/v1/chat/completions", settings.Endpoint);
+        Assert.Equal("qwen2.5:3b", settings.Model);
+        Assert.False(settings.LocalAiSetupPromptSeen);
+    }
+
+    [Fact]
     public void PersistsProviderConfigurationButNeverAnApiKey()
     {
         var path = Path.Combine(Path.GetTempPath(), $"apexai-settings-{Guid.NewGuid():N}.json");

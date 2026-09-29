@@ -2,17 +2,20 @@ using System.Text.Json;
 
 namespace ApexAI.Core.Configuration;
 
-public enum EngineerProvider { Offline, OpenAiCompatible }
+public enum EngineerProvider { Offline = 0, OpenAiCompatible = 1, LocalOllama = 2 }
 
 public sealed record EngineerSettings(
-    EngineerProvider Provider = EngineerProvider.Offline,
-    string Endpoint = "https://api.openai.com/v1/chat/completions",
-    string Model = "gpt-4o-mini",
+    EngineerProvider Provider = EngineerProvider.LocalOllama,
+    string Endpoint = "http://127.0.0.1:11434/v1/chat/completions",
+    string Model = "qwen2.5:3b",
     int TelemetryPort = 9000,
     double OverlayWidth = 390,
     double OverlayHeight = 185,
     double OverlayOpacity = 0.94,
-    int AiTimeoutSeconds = 45);
+    int AiTimeoutSeconds = 180)
+{
+    public bool LocalAiSetupPromptSeen { get; init; }
+}
 
 public sealed class EngineerSettingsStore
 {
