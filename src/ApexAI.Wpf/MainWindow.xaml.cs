@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     private bool _demoMode;
     private int _lastSessionRevision = -1;
     private string? _lastAutoSelectedCompletedSessionId;
+    private readonly AccBroadcastingSetupService _accSetup = new(new DpapiSecretStore());
 
     public MainWindow()
     {
@@ -121,8 +122,8 @@ public partial class MainWindow : Window
     {
         var secrets = new DpapiSecretStore();
         var stream = new AccUdpTelemetryStream(port,
-            secrets.Get("acc-connection-password") ?? string.Empty,
-            secrets.Get("acc-command-password") ?? string.Empty);
+            secrets.Get(AccBroadcastingSetupService.ConnectionSecretKey) ?? string.Empty,
+            secrets.Get(AccBroadcastingSetupService.CommandSecretKey) ?? string.Empty);
         stream.SnapshotReceived += (_, snapshot) => Dispatcher.Invoke(() => _latestLiveSnapshot = snapshot);
         try
         {
@@ -235,8 +236,8 @@ public partial class MainWindow : Window
     private void SettingsClick(object sender, RoutedEventArgs e)
     {
         var secretStore = new DpapiSecretStore();
-        var oldConnectionPassword = secretStore.Get("acc-connection-password") ?? string.Empty;
-        var oldCommandPassword = secretStore.Get("acc-command-password") ?? string.Empty;
+        var oldConnectionPassword = secretStore.Get(AccBroadcastingSetupService.ConnectionSecretKey) ?? string.Empty;
+        var oldCommandPassword = secretStore.Get(AccBroadcastingSetupService.CommandSecretKey) ?? string.Empty;
         var dialog = new SettingsWindow(_settings)
         {
             Owner = this,
@@ -247,8 +248,8 @@ public partial class MainWindow : Window
         var oldPort = _settings.TelemetryPort;
         _settings = dialog.Settings;
         _settingsStore.Save(_settings);
-        StorePassword(secretStore, "acc-connection-password", dialog.ConnectionPassword);
-        StorePassword(secretStore, "acc-command-password", dialog.CommandPassword);
+        StorePassword(secretStore, AccBroadcastingSetupService.ConnectionSecretKey, dialog.ConnectionPassword);
+        StorePassword(secretStore, AccBroadcastingSetupService.CommandSecretKey, dialog.CommandPassword);
         _overlay?.SetSize(_settings.OverlayWidth, _settings.OverlayHeight);
         _overlay?.SetOpacity(_settings.OverlayOpacity);
         if (oldPort != _settings.TelemetryPort ||
@@ -258,6 +259,73 @@ public partial class MainWindow : Window
             _udpTelemetry.Dispose();
             _latestLiveSnapshot = null;
             _udpTelemetry = CreateTelemetryStream(_settings.TelemetryPort);
+        }
+    }
+
+    private async void SetupAccClick(object sender, RoutedEventArgs e)
+    {
+        var button = (Button)sender;
+        button.IsEnabled = false;
+        try
+        {
+            var result = await Task.Run(_accSetup.Configure);
+            var oldPort = _settings.TelemetryPort;
+            _settings = _settings with { TelemetryPort = result.Port };
+            _udpTelemetry.Dispose();
+            _latestLiveSnapshot = null;
+            _udpTelemetry = CreateTelemetryStream(result.Port);
+
+            string? settingsError = null;
+            try
+            {
+                _settingsStore.Save(_settings);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                settingsError = exception.Message;
+            }
+
+            var backup = result.BackupPath is null
+                ? "No ACC config values needed changing; no file backup was necessary."
+                : $"Original config backup: {result.BackupPath}";
+            var passwordStatus = result.PasswordGenerated
+                ? "A secure connection password was generated and stored locally with Windows DPAPI."
+                : "The existing connection password was reused and stored locally with Windows DPAPI.";
+            var restartStatus = result.BackupPath is null
+                ? "ACC's config did not change, so an ACC restart is not needed."
+                : "If ACC was running during setup, restart ACC to apply the config change.";
+            var settingsStatus = settingsError is null
+                ? "ApexAI updated its listener and will keep retrying; the app does not need to restart."
+                : $"ApexAI is using port {result.Port} now, but could not save that setting for next launch: {settingsError}";
+
+            MessageBox.Show(this,
+                $"ACC broadcasting setup is complete.\n\nConfig: {result.ConfigPath}\nUDP port: {result.Port}\n{backup}\n{passwordStatus}\n\n{restartStatus} {settingsStatus} Start or join an ACC session to receive LIVE ACC telemetry.{(oldPort != result.Port ? $"\n\nApexAI's listener was updated from port {oldPort}." : string.Empty)}\n\nACC stores its required connection password in broadcasting.json; ApexAI's local copy is DPAPI-protected.",
+                "ACC setup", MessageBoxButton.OK,
+                settingsError is null ? MessageBoxImage.Information : MessageBoxImage.Warning);
+        }
+        catch (AccBroadcastingSetupException exception)
+        {
+            var backup = exception.BackupPath is null ? string.Empty : $"\nBackup: {exception.BackupPath}";
+            MessageBox.Show(this,
+                $"{exception.Message}{backup}\n\n{(exception.ConfigUpdated ? "Verify the ACC config file before trying again." : "The ACC config file was left unchanged.")}",
+                "ACC setup needs attention", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        catch (FileNotFoundException exception)
+        {
+            MessageBox.Show(this,
+                $"{exception.Message}\n\nApexAI only edits an existing ACC config so it can preserve ACC's version-specific settings. Launch ACC once, close it, then choose Set up ACC again.",
+                "ACC config not found", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+            or JsonException or System.Security.Cryptography.CryptographicException
+            or System.ComponentModel.Win32Exception or ArgumentException)
+        {
+            MessageBox.Show(this, exception.Message, "ACC setup failed",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            button.IsEnabled = true;
         }
     }
 

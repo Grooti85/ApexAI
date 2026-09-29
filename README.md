@@ -26,11 +26,27 @@ The self-contained Windows release is `ApexAI-win-x64.zip`; it does not require 
 
 ApexAI uses ACC's **binary UDP broadcasting interface**, not arbitrary JSON or a generic UDP telemetry bridge. ACC must be configured to accept a local broadcasting client:
 
-1. In ACC's `broadcasting.json` (normally `%USERPROFILE%\Documents\Assetto Corsa Competizione\Config\broadcasting.json`), enable the UDP listener and choose `updListenerPort`, `connectionPassword`, and `commandPassword`. The listener port defaults to `9000`.
-2. In ApexAI **Settings**, enter the same port and passwords. The passwords are protected for the current Windows user with DPAPI; they are not written to `settings.json`.
-3. Start ACC and enter a session. ApexAI registers as a version-4 broadcasting client, requests the entry list and track data, then reads the focused car's realtime packets.
+Choose **Set up ACC** in the dashboard to detect and update the existing
+`broadcasting.json` (normally
+`%USERPROFILE%\Documents\Assetto Corsa Competizione\Config\broadcasting.json`).
+ApexAI preserves unrelated JSON fields, keeps a valid configured port and
+password, and repairs only invalid/missing required values with port `9000`
+and a securely generated connection password. A valid password already in the
+ACC config is reused; if it is blank, ApexAI reuses its saved DPAPI password
+or generates one. Non-empty ACC connection and command passwords are
+protected locally with Windows DPAPI. ACC stores its required copy of these
+passwords in `broadcasting.json` as plain text.
 
-The client retries registration while waiting for ACC. The dashboard displays **LIVE ACC** only after it receives valid binary ACC packets for the focused car. **Use demo data** is an explicit, visibly labelled mock mode; demo data is never saved as a real session.
+Before changing the file, ApexAI writes a timestamped backup beside it. If
+`broadcasting.json` is missing, ApexAI will not create an incomplete,
+version-specific ACC config: launch ACC once, close it, then use **Set up ACC**
+again. When setup changes the config and ACC is already running, restart ACC
+to apply it. ApexAI updates its listener and keeps retrying, so it does not
+need to restart; start or join an ACC session to receive live data.
+
+ApexAI shows **LIVE ACC** only after valid native ACC broadcast packets arrive.
+**Use demo data** is an explicit, visibly labelled mock mode; demo data is
+never saved as a real session.
 
 ### Data and report scope
 
@@ -48,7 +64,8 @@ AI mentor workflows, an AI provider settings surface, a skill tree, and a practi
 - **Registration/password error:** check the connection and command passwords in both ACC `broadcasting.json` and ApexAI settings.
 - **No live updates in the dashboard:** start or join an ACC session. Demo mode remains explicitly marked and is not a substitute for ACC connectivity.
 - **Session history unavailable:** check write access to `%LOCALAPPDATA%\ApexAI`; malformed history is reported instead of silently replaced.
-- **Build fails with SDK not found:** install the .NET 8 SDK, not only the runtime. WPF builds need Windows Desktop targeting support.
+- **Build fails with SDK not found:** install the .NET 8 SDK, not only the
+  runtime. WPF builds require Windows Desktop targeting support.
 
 ## Architecture
 
