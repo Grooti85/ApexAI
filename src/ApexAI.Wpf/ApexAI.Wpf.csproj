@@ -12,7 +12,7 @@
     <Description>ACC coaching dashboard with an optional live race overlay.</Description>
     <Company>ApexAI</Company>
     <ApplicationIcon />
-    <Version>0.3.0-rc2</Version>
+    <Version>0.3.0-rc3</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
