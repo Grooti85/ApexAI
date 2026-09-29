@@ -9,7 +9,7 @@
     <RootNamespace>ApexAI.Wpf</RootNamespace>
     <AssemblyTitle>ApexAI</AssemblyTitle>
     <Product>ApexAI</Product>
-    <Description>Always-on-top AI race engineer overlay for Assetto Corsa Competizione.</Description>
+    <Description>ACC coaching dashboard with an optional live race overlay.</Description>
     <Company>ApexAI</Company>
     <ApplicationIcon />
     <Version>0.2.2</Version>

@@ -1,89 +1,55 @@
 # ApexAI
-Desktop AI race engineer for Assetto Corsa Competizione.
+
+Windows desktop race dashboard and optional live overlay for Assetto Corsa Competizione (ACC).
 
 **Product:** ApexAI
-**Repository:** [Grooti85/ApexAI](https://github.com/Grooti85/ApexAI)
+**Repository:** [Grooti85/ApexAI](https://github.com/Grooti85/apexai)
 
-This repository is desktop-only: the shipped product is the Windows WPF
-executable `ApexAI.exe`. There is no browser application or web build.
+ApexAI does not drive the car, inject input, or automate gameplay. The main window is a dashboard for live session status, saved sessions, lap reports, and one evidence-based next mission. A separate compact, draggable, always-on-top overlay is optional.
 
-## Windows app
-
-The desktop app is a .NET 8 WPF executable (`ApexAI.exe`) in `src/ApexAI.Wpf`. It is always on
-top, draggable, and safe to use alongside ACC. It never drives
-the game, injects input, or automates driving.
-
-## One-click install (GitHub Releases)
-
-Tagged releases publish `ApexAI-win-x64.zip`. Download it from the **ApexAI Releases**
-section, extract it anywhere, and run `ApexAI.exe`. The package is
-self-contained and does not require installing .NET. Windows SmartScreen may
-ask for confirmation because early releases are not code-signed.
-
-### Requirements
+## Requirements and build
 
 - Windows 10/11
-- .NET 8 SDK (the WPF project requires the Windows Desktop SDK)
-- Visual Studio 2022 with the `.NET desktop development` workload, or the
-  Windows .NET SDK
-
-### Build and run from source
+- .NET 8 SDK with Windows Desktop targeting support
+- Visual Studio 2022 with the `.NET desktop development` workload, or the Windows .NET SDK
 
 ```powershell
 dotnet restore ApexAI.sln
-dotnet build ApexAI.sln
-dotnet test tests/ApexAI.Core.Tests/ApexAI.Core.Tests.csproj
+dotnet build ApexAI.sln --configuration Release
+dotnet test tests/ApexAI.Core.Tests/ApexAI.Core.Tests.csproj --configuration Release
 dotnet run --project src/ApexAI.Wpf/ApexAI.Wpf.csproj
 ```
 
-## ACC telemetry
+The self-contained Windows release is `ApexAI-win-x64.zip`; it does not require a separately installed .NET runtime. Early releases may trigger Windows SmartScreen because they are not code-signed.
 
-The app starts its UDP listener before showing the overlay and listens for
-newline-independent JSON UDP packets on port `9000` by
-default. Configure an ACC telemetry bridge/plugin to send packets with these
-fields: `phase`, `lapNumber`, `lapProgress`, `speedKph`, `fuelLiters`,
-`fuelPerLapLiters`, `tyreTemperatureCelsius`, `isOffTrack`, `hasIncident`, and
-`isInPitLane`. The parser validates required fields and automatically shows mock mode when no recent packet has arrived. This keeps the app usable while
-ACC is closed and leaves the transport isolated behind `ITelemetryStream`.
-Start ApexAI before or after ACC: no game restart is needed. Once the bridge
-begins sending packets, the overlay switches to `ACC CONNECTED` automatically.
+## ACC live telemetry setup
 
-ACC's built-in shared memory format varies by version and third-party plugin.
-The UDP boundary is deliberate: a native/shared-memory adapter can be added
-without changing the race model, detector, or overlay.
+ApexAI uses ACC's **binary UDP broadcasting interface**, not arbitrary JSON or a generic UDP telemetry bridge. ACC must be configured to accept a local broadcasting client:
 
-## Engineer configuration
+1. In ACC's `broadcasting.json` (normally `%USERPROFILE%\Documents\Assetto Corsa Competizione\Config\broadcasting.json`), enable the UDP listener and choose `updListenerPort`, `connectionPassword`, and `commandPassword`. The listener port defaults to `9000`.
+2. In ApexAI **Settings**, enter the same port and passwords. The passwords are protected for the current Windows user with DPAPI; they are not written to `settings.json`.
+3. Start ACC and enter a session. ApexAI registers as a version-4 broadcasting client, requests the entry list and track data, then reads the focused car's realtime packets.
 
-The default provider is deterministic and offline. It is the recommended
-starting mode and requires no account or network access. The core also exposes
-an OpenAI-compatible provider for a future settings UI/configuration layer:
+The client retries registration while waiting for ACC. The dashboard displays **LIVE ACC** only after it receives valid binary ACC packets for the focused car. **Use demo data** is an explicit, visibly labelled mock mode; demo data is never saved as a real session.
 
-- Provider: `Offline` or `OpenAiCompatible`
-- Endpoint: OpenAI-compatible `/v1/chat/completions` URL
-- Model: provider model name
-- API key: stored locally using Windows DPAPI under the current Windows user;
-  it is never written to `settings.json`
+### Data and report scope
 
-If the provider is unavailable, times out, has no key, or returns an error, the
-deterministic engineer message is shown instead.
+The supported ACC broadcast packets supply session type/phase, focused car, track name, lap count/progress, speed, pit-lane location, last-lap validity/time, and best lap time. ApexAI stores completed timed laps locally in `%LOCALAPPDATA%\ApexAI\sessions.json`. A completed-session report derives the session best, improvement against the best recorded valid lap on the same track (when history exists), lap-time standard deviation, and a lap-validity summary. The next mission is selected only from those measurements; its reason is shown with it.
+
+The standard ACC broadcasting interface does **not** supply fuel, tyre temperatures, steering/brake traces, or corner-by-corner telemetry. ApexAI leaves those values unavailable and does not generate advice about them. Sessions without enough valid laps are explicitly reported as a baseline rather than assigned invented comparisons. Session records are local and are not uploaded.
+
+## Scope
+
+AI mentor workflows, an AI provider settings surface, a skill tree, and a practice lab are not part of this initial coaching slice.
 
 ## Troubleshooting
 
-- **Overlay says MOCK MODE:** confirm the telemetry bridge is sending UDP to
-  `127.0.0.1:9000` and that Windows Firewall allows the app.
-- **No AI response:** verify the API key and endpoint; offline fallback is
-  expected and safe.
-- **Window is in the way:** drag from anywhere across the top ApexAI header,
-  including its empty space. The `Settings` and `Close` buttons remain
-  clickable in the footer; use `Settings` to adjust width, height, and opacity.
-- **Build fails with SDK not found:** install the .NET 8 SDK, not only the
-  runtime. WPF builds require Windows Desktop targeting support.
+- **Waiting for ACC:** verify that ACC's UDP broadcasting is enabled, the configured `updListenerPort` matches ApexAI's port, and both passwords match exactly. Allow ApexAI through Windows Firewall if prompted.
+- **Registration/password error:** check the connection and command passwords in both ACC `broadcasting.json` and ApexAI settings.
+- **No live updates in the dashboard:** start or join an ACC session. Demo mode remains explicitly marked and is not a substitute for ACC connectivity.
+- **Session history unavailable:** check write access to `%LOCALAPPDATA%\ApexAI`; malformed history is reported instead of silently replaced.
+- **Build fails with SDK not found:** install the .NET 8 SDK, not only the runtime. WPF builds need Windows Desktop targeting support.
 
-## Development architecture
+## Architecture
 
-`ITelemetryProvider`/`ITelemetryStream` isolate ACC transport, `RaceState` and
-`RaceEventDetector` provide deterministic domain logic, and
-`IEngineerMessageService` is the seam for AI. CI runs on Windows and tagged
-releases produce a self-contained `win-x64` archive. The same workflow can be
-run manually from GitHub Actions to validate and download the archive as a
-workflow artifact without creating a release.
+`AccUdpTelemetryStream` performs the ACC broadcasting handshake and binary packet parsing behind `ITelemetryStream`. The telemetry model keeps unavailable ACC fields nullable. `SessionRecorder` persists only ACC-sourced sessions and laps; `SessionAnalysis` calculates reports and selects the next mission from completed-lap evidence. The WPF dashboard and optional overlay both consume those same snapshots. CI builds/tests on Windows and packages a self-contained `win-x64` archive.

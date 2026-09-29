@@ -1,20 +1,30 @@
 namespace ApexAI.Core.Telemetry;
 
 public enum SessionPhase { Garage, Practice, Qualifying, Race, Finished }
+public enum TelemetrySource { AccBroadcasting, Demo }
 
 public sealed record TelemetrySnapshot(
     DateTimeOffset Timestamp,
     SessionPhase Phase,
     int LapNumber,
-    double LapProgress,
-    double SpeedKph,
-    double FuelLiters,
-    double FuelPerLapLiters,
-    double TyreTemperatureCelsius,
-    bool IsOffTrack,
-    bool HasIncident,
-    bool IsInPitLane,
-    bool IsConnected);
+    double? LapProgress,
+    double? SpeedKph,
+    double? FuelLiters,
+    double? FuelPerLapLiters,
+    double? TyreTemperatureCelsius,
+    bool? IsOffTrack,
+    bool? HasIncident,
+    bool? IsInPitLane,
+    bool IsConnected,
+    TelemetrySource Source = TelemetrySource.AccBroadcasting,
+    string? SessionId = null,
+    string? TrackName = null,
+    string? SessionType = null,
+    int? LastLapTimeMs = null,
+    int? BestLapTimeMs = null,
+    bool? LastLapIsValid = null,
+    bool? LastLapIsOutLap = null,
+    bool? LastLapIsInLap = null);
 
 public interface ITelemetryProvider
 {
@@ -44,12 +54,19 @@ public sealed class MockTelemetryProvider : ITelemetryProvider
             lap,
             (tick % 30) / 30d,
             160 + (tick % 10) * 2,
-            Math.Max(4, 42 - tick * 0.4),
-            2.8,
-            87 + (tick % 8),
-            tick % 37 == 0,
-            tick % 101 == 0,
-            false,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            true,
+            TelemetrySource.Demo,
+            "demo-session",
+            "Demo circuit",
+            "Demo",
+            100000 + (tick % 8) * 250,
+            99000,
             true);
     }
 }

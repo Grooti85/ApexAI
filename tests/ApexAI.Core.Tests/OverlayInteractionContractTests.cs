@@ -5,16 +5,16 @@ namespace ApexAI.Core.Tests;
 public sealed class OverlayInteractionContractTests
 {
     [Fact]
-    public void OverlayContractDocumentsHeaderDragAndFooterActions()
+    public void DashboardKeepsOptionalCompactOverlayDraggable()
     {
         var projectRoot = FindProjectRoot();
-        var xaml = File.ReadAllText(Path.Combine(projectRoot, "src", "ApexAI.Wpf", "MainWindow.xaml"));
-        var codeBehind = File.ReadAllText(Path.Combine(projectRoot, "src", "ApexAI.Wpf", "MainWindow.xaml.cs"));
+        var xaml = File.ReadAllText(Path.Combine(projectRoot, "src", "ApexAI.Wpf", "OverlayWindow.xaml"));
+        var codeBehind = File.ReadAllText(Path.Combine(projectRoot, "src", "ApexAI.Wpf", "OverlayWindow.xaml.cs"));
+        var dashboard = File.ReadAllText(Path.Combine(projectRoot, "src", "ApexAI.Wpf", "MainWindow.xaml"));
 
         Assert.Contains("Background=\"Transparent\"", xaml);
         Assert.Contains("PreviewMouseLeftButtonDown=\"HeaderMouseLeftButtonDown\"", xaml);
-        Assert.Contains("Content=\"Settings\" Click=\"SettingsClick\"", xaml);
-        Assert.Contains("Content=\"Close\" Click=\"CloseClick\"", xaml);
+        Assert.Contains("Content=\"Show live overlay\" Click=\"OverlayClick\"", dashboard);
         Assert.Contains("DragMove();", codeBehind);
         Assert.Contains("e.Handled = true;", codeBehind);
     }

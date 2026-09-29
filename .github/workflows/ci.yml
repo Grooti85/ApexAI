@@ -47,3 +47,4 @@ jobs:
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         with:
           files: ApexAI-win-x64.zip
+          prerelease: ${{ contains(github.ref_name, '-') }}

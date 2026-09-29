@@ -32,12 +32,12 @@ public sealed class EngineerSettingsTests
     }
 
     [Fact]
-    public void UsesReadableOverlayDefaults()
+    public void UsesCompactOverlayDefaults()
     {
         var settings = new EngineerSettings();
 
-        Assert.Equal(680, settings.OverlayWidth);
-        Assert.Equal(460, settings.OverlayHeight);
+        Assert.Equal(390, settings.OverlayWidth);
+        Assert.Equal(185, settings.OverlayHeight);
         Assert.InRange(settings.OverlayOpacity, 0.65, 1);
     }
 }

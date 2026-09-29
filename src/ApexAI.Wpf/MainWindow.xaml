@@ -1,103 +1,181 @@
 <Window x:Class="ApexAI.Wpf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="ApexAI Race Engineer" Width="680" Height="460"
-        MinWidth="520" MinHeight="360" MaxWidth="1100" MaxHeight="800"
-        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
-        Topmost="True" ShowInTaskbar="True" Opacity="0.94">
+        Title="ApexAI" Width="1240" Height="800" MinWidth="940" MinHeight="640"
+        WindowStartupLocation="CenterScreen" Background="#FF101116" Foreground="#FFF4F5F7">
   <Window.Resources>
+    <SolidColorBrush x:Key="Surface" Color="#FF191A21"/>
+    <SolidColorBrush x:Key="SurfaceRaised" Color="#FF20212A"/>
+    <SolidColorBrush x:Key="Muted" Color="#FF989AA5"/>
+    <SolidColorBrush x:Key="Accent" Color="#FFF13846"/>
     <Style TargetType="TextBlock">
       <Setter Property="FontFamily" Value="Segoe UI"/>
-    </Style>
-    <Style x:Key="CardText" TargetType="TextBlock">
       <Setter Property="Foreground" Value="#FFF4F5F7"/>
-      <Setter Property="FontSize" Value="20"/>
-      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style x:Key="NavButton" TargetType="Button">
+      <Setter Property="Foreground" Value="#FFB7B8C0"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+      <Setter Property="Padding" Value="16,12"/>
+      <Setter Property="Margin" Value="0,3"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style TargetType="Button">
       <Setter Property="Foreground" Value="#FFF4F5F7"/>
-      <Setter Property="Background" Value="#FF262A34"/>
-      <Setter Property="BorderBrush" Value="#FF3A3E4A"/>
+      <Setter Property="Background" Value="#FF262832"/>
+      <Setter Property="BorderBrush" Value="#FF3A3C46"/>
       <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="Padding" Value="12,6"/>
-      <Setter Property="Margin" Value="4,0,0,0"/>
+      <Setter Property="Padding" Value="12,8"/>
+      <Setter Property="Margin" Value="6,0,0,0"/>
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
   </Window.Resources>
-  <Border CornerRadius="18" BorderThickness="1" BorderBrush="#FF5B2029" Padding="22">
-    <Border.Background>
-      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#F20C0D12" Offset="0"/>
-        <GradientStop Color="#F2181A22" Offset="0.62"/>
-        <GradientStop Color="#F23A1018" Offset="1"/>
-      </LinearGradientBrush>
-    </Border.Background>
-    <Grid>
-      <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="*"/>
-        <RowDefinition Height="Auto"/>
-      </Grid.RowDefinitions>
-      <Grid x:Name="HeaderPanel" Background="Transparent"
-            PreviewMouseLeftButtonDown="HeaderMouseLeftButtonDown">
-        <StackPanel Orientation="Horizontal">
-          <Border Background="#FFE52B3A" CornerRadius="5" Padding="7,3" VerticalAlignment="Center">
-            <TextBlock Text="AI" Foreground="White" FontSize="12" FontWeight="Bold"/>
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="76"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+    <Border Background="#FF15161C" BorderBrush="#FF292A32" BorderThickness="0,0,0,1">
+      <Grid Margin="28,0">
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+          <Border Background="{StaticResource Accent}" CornerRadius="6" Padding="8,5">
+            <TextBlock Text="AI" FontSize="13" FontWeight="Bold" Foreground="White"/>
           </Border>
-          <StackPanel Margin="11,0,0,0">
-            <TextBlock Text="APEXAI" Foreground="White" FontSize="21" FontWeight="Bold"/>
-            <TextBlock Text="RACE ENGINEER  /  LIVE TELEMETRY" Foreground="#FF9C9EA7" FontSize="9" FontWeight="SemiBold"/>
+          <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+            <TextBlock Text="APEXAI" FontSize="19" FontWeight="Bold" Foreground="White"/>
+            <TextBlock Text="RACE ENGINEER" FontSize="9" FontWeight="SemiBold" Foreground="{StaticResource Muted}"/>
           </StackPanel>
         </StackPanel>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-          <Ellipse x:Name="ConnectionDot" Width="9" Height="9" Fill="#FFFFB74D" Margin="0,0,7,0"/>
-          <TextBlock x:Name="ConnectionText" Text="STARTING" Foreground="#FFFFB74D" FontSize="11" FontWeight="Bold"/>
+          <Ellipse x:Name="ConnectionDot" Width="8" Height="8" Fill="#FFF13846" Margin="0,0,8,0"/>
+          <TextBlock x:Name="ConnectionText" Text="WAITING FOR ACC" FontSize="11" FontWeight="Bold" Foreground="#FFF13846" VerticalAlignment="Center"/>
+          <Button Content="Show live overlay" Click="OverlayClick"/>
+          <Button Content="Settings" Click="SettingsClick"/>
+          <Button Content="Close" Click="CloseClick"/>
         </StackPanel>
       </Grid>
-      <Border Grid.Row="1" Margin="0,20,0,14" Background="#FF241B22" BorderBrush="#FF4A202B" BorderThickness="1" CornerRadius="11" Padding="15,12">
+    </Border>
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="210"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+      <Border Background="#FF15161C" BorderBrush="#FF292A32" BorderThickness="0,0,1,0" Padding="16,24">
         <DockPanel>
-          <StackPanel>
-            <TextBlock Text="CURRENT SESSION" Foreground="#FF9C9EA7" FontSize="10" FontWeight="Bold"/>
-            <TextBlock x:Name="StatusText" Text="Waiting for telemetry..." Foreground="White" FontSize="21" FontWeight="SemiBold" Margin="0,3,0,0"/>
+          <StackPanel DockPanel.Dock="Top">
+            <TextBlock Text="WORKSPACE" Foreground="{StaticResource Muted}" FontSize="10" FontWeight="Bold" Margin="12,0,0,12"/>
+            <Button x:Name="DashboardNav" Style="{StaticResource NavButton}" Content="Overview" Click="DashboardClick"/>
+            <Button x:Name="SessionsNav" Style="{StaticResource NavButton}" Content="Sessions" Click="SessionsClick"/>
+            <Button x:Name="MissionNav" Style="{StaticResource NavButton}" Content="Next mission" Click="MissionClick"/>
           </StackPanel>
-          <TextBlock x:Name="ModeText" DockPanel.Dock="Right" VerticalAlignment="Center" Text="OFFLINE ENGINEER" TextAlignment="Right" Foreground="#FFD4D5DA" FontSize="10" FontWeight="SemiBold" TextWrapping="Wrap"/>
+          <Border DockPanel.Dock="Bottom" Background="#FF1C1D24" CornerRadius="9" Padding="12" Margin="0,18,0,0">
+            <StackPanel>
+              <TextBlock Text="TELEMETRY SOURCE" Foreground="{StaticResource Muted}" FontSize="9" FontWeight="Bold"/>
+              <TextBlock x:Name="SourceLabel" Text="ACC BROADCASTING" FontSize="11" FontWeight="SemiBold" Margin="0,5,0,0"/>
+              <TextBlock x:Name="TransportText" Text="Connecting to ACC on UDP 9000" FontSize="10" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,5,0,0"/>
+              <Button x:Name="DemoButton" Content="Use demo data" Click="DemoClick" Margin="0,12,0,0" HorizontalAlignment="Stretch"/>
+            </StackPanel>
+          </Border>
         </DockPanel>
       </Border>
-      <Grid Grid.Row="2">
-        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-        <UniformGrid Rows="1" Columns="4" Margin="0,0,0,14">
-          <Border Background="#FF1B1D25" CornerRadius="9" Padding="12,10" Margin="0,0,7,0">
-            <StackPanel><TextBlock Text="SPEED" Foreground="#FF9699A4" FontSize="10" FontWeight="Bold"/><TextBlock x:Name="SpeedText" Style="{StaticResource CardText}" Text="—"/><TextBlock Text="km/h" Foreground="#FF777A85" FontSize="10"/></StackPanel>
-          </Border>
-          <Border Background="#FF1B1D25" CornerRadius="9" Padding="12,10" Margin="3,0,4,0">
-            <StackPanel><TextBlock Text="FUEL" Foreground="#FF9699A4" FontSize="10" FontWeight="Bold"/><TextBlock x:Name="FuelText" Style="{StaticResource CardText}" Text="—"/><TextBlock Text="litres" Foreground="#FF777A85" FontSize="10"/></StackPanel>
-          </Border>
-          <Border Background="#FF1B1D25" CornerRadius="9" Padding="12,10" Margin="4,0,3,0">
-            <StackPanel><TextBlock Text="TYRES" Foreground="#FF9699A4" FontSize="10" FontWeight="Bold"/><TextBlock x:Name="TyreText" Style="{StaticResource CardText}" Text="—"/><TextBlock Text="°C" Foreground="#FF777A85" FontSize="10"/></StackPanel>
-          </Border>
-          <Border Background="#FF1B1D25" CornerRadius="9" Padding="12,10" Margin="7,0,0,0">
-            <StackPanel><TextBlock Text="LAP" Foreground="#FF9699A4" FontSize="10" FontWeight="Bold"/><TextBlock x:Name="LapText" Style="{StaticResource CardText}" Text="—"/><TextBlock x:Name="ProgressText" Text="—" Foreground="#FF777A85" FontSize="10"/></StackPanel>
-          </Border>
-        </UniformGrid>
-        <Border Grid.Row="1" Background="#FF2A171D" BorderBrush="#FF8E2938" BorderThickness="1" CornerRadius="12" Padding="17,14">
-          <Grid>
-            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-            <Border Background="#FFE52B3A" CornerRadius="7" Width="34" Height="34" VerticalAlignment="Top">
-              <TextBlock Text="AI" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+      <Grid Grid.Column="1" Margin="34,28">
+        <Grid x:Name="DashboardPage">
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+          <StackPanel>
+            <TextBlock Text="DRIVER DASHBOARD" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold"/>
+            <TextBlock x:Name="StatusText" Text="Waiting for ACC broadcast telemetry" FontSize="28" FontWeight="SemiBold" Margin="0,6,0,0"/>
+            <TextBlock x:Name="TrackText" Text="No active session" Foreground="{StaticResource Muted}" FontSize="13" Margin="0,4,0,0"/>
+          </StackPanel>
+          <UniformGrid Grid.Row="1" Rows="1" Columns="4" Margin="0,24,0,22">
+            <Border Background="{StaticResource Surface}" CornerRadius="10" Padding="18,16" Margin="0,0,10,0">
+              <StackPanel><TextBlock Text="CURRENT LAP" Foreground="{StaticResource Muted}" FontSize="10" FontWeight="Bold"/><TextBlock x:Name="LapText" Text="—" FontSize="30" FontWeight="SemiBold" Margin="0,7,0,0"/></StackPanel>
             </Border>
-            <StackPanel Grid.Column="1" Margin="13,0,0,0">
-              <TextBlock Text="ENGINEER MESSAGE" Foreground="#FFFF8290" FontSize="10" FontWeight="Bold"/>
-              <TextBlock x:Name="EngineerText" Margin="0,6,0,0" Foreground="#FFF8F8FA" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap" Text="Engineer: all clear."/>
-            </StackPanel>
+            <Border Background="{StaticResource Surface}" CornerRadius="10" Padding="18,16" Margin="4,0,6,0">
+              <StackPanel><TextBlock Text="SPEED" Foreground="{StaticResource Muted}" FontSize="10" FontWeight="Bold"/><StackPanel Orientation="Horizontal" Margin="0,7,0,0"><TextBlock x:Name="SpeedText" Text="—" FontSize="30" FontWeight="SemiBold"/><TextBlock Text=" km/h" Foreground="{StaticResource Muted}" VerticalAlignment="Bottom" Margin="4,0,0,5"/></StackPanel></StackPanel>
+            </Border>
+            <Border Background="{StaticResource Surface}" CornerRadius="10" Padding="18,16" Margin="6,0,4,0">
+              <StackPanel><TextBlock Text="PERSONAL BEST" Foreground="{StaticResource Muted}" FontSize="10" FontWeight="Bold"/><TextBlock x:Name="BestLapText" Text="—" FontSize="30" FontWeight="SemiBold" Margin="0,7,0,0"/></StackPanel>
+            </Border>
+            <Border Background="{StaticResource Surface}" CornerRadius="10" Padding="18,16" Margin="10,0,0,0">
+              <StackPanel><TextBlock Text="LAP PROGRESS" Foreground="{StaticResource Muted}" FontSize="10" FontWeight="Bold"/><TextBlock x:Name="ProgressText" Text="—" FontSize="30" FontWeight="SemiBold" Margin="0,7,0,0"/></StackPanel>
+            </Border>
+          </UniformGrid>
+          <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="1.2*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Border Background="{StaticResource Surface}" CornerRadius="12" Padding="22" Margin="0,0,12,0">
+              <StackPanel>
+                <TextBlock Text="SESSION STATUS" Foreground="{StaticResource Muted}" FontSize="10" FontWeight="Bold"/>
+                <TextBlock x:Name="SessionDetailText" Text="ACC will send car, lap and timing data after broadcasting is enabled." FontSize="17" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                <Border Background="#FF24252E" CornerRadius="8" Padding="14" Margin="0,20,0,0">
+                  <StackPanel>
+                    <TextBlock Text="AVAILABLE FROM ACC" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="Lap timing · speed · lap progress · pit-lane state" Foreground="#FFD0D1D7" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                  </StackPanel>
+                </Border>
+                <TextBlock Text="Fuel, tyre temperatures, steering and brake traces are not part of this ACC broadcast feed." Foreground="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,14,0,0"/>
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Background="#FF241A20" BorderBrush="#FF51252E" BorderThickness="1" CornerRadius="12" Padding="22">
+              <StackPanel>
+                <TextBlock Text="NEXT MISSION" Foreground="#FFFF707D" FontSize="10" FontWeight="Bold"/>
+                <TextBlock x:Name="MissionTitleText" Text="Collect your first live session" FontSize="21" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                <TextBlock x:Name="MissionWhyText" Text="The coaching target will be selected from recorded lap evidence." Foreground="#FFC4C4CC" FontSize="13" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                <Button Content="View mission" HorizontalAlignment="Left" Click="MissionClick" Margin="0,20,0,0"/>
+              </StackPanel>
+            </Border>
           </Grid>
-        </Border>
+        </Grid>
+        <Grid x:Name="SessionsPage" Visibility="Collapsed">
+          <Grid.ColumnDefinitions><ColumnDefinition Width="0.9*"/><ColumnDefinition Width="1.1*"/></Grid.ColumnDefinitions>
+          <StackPanel>
+            <TextBlock Text="SESSION HISTORY" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold"/>
+            <TextBlock Text="Recorded sessions" FontSize="28" FontWeight="SemiBold" Margin="0,6,0,18"/>
+            <ListBox x:Name="SessionList" Background="Transparent" BorderThickness="0" Foreground="#FFF4F5F7"
+                     SelectionChanged="SessionSelectionChanged">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Border Background="#FF191A21" CornerRadius="9" Padding="14" Margin="0,0,12,10">
+                    <StackPanel>
+                      <TextBlock Text="{Binding TrackName}" FontWeight="SemiBold" FontSize="15"/>
+                      <TextBlock Text="{Binding StartedAt, StringFormat={}{0:MMM d, yyyy  HH:mm}}" Foreground="#FF989AA5" FontSize="11" Margin="0,4,0,0"/>
+                      <TextBlock Text="{Binding Laps.Count, StringFormat={}{0} recorded laps}" Foreground="#FFB7B8C0" FontSize="11" Margin="0,4,0,0"/>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </StackPanel>
+          <Border Grid.Column="1" Background="{StaticResource Surface}" CornerRadius="12" Padding="24" Margin="12,42,0,0">
+            <StackPanel>
+              <TextBlock Text="SESSION REPORT" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold"/>
+              <TextBlock x:Name="ReportTrackText" Text="Select a completed session" FontSize="22" FontWeight="SemiBold" Margin="0,8,0,0"/>
+              <TextBlock x:Name="ReportPbText" Text="Personal best: —" Foreground="#FFD5D5DC" FontSize="14" Margin="0,20,0,0"/>
+              <TextBlock x:Name="ReportImprovementText" Text="Improvement: —" Foreground="#FFD5D5DC" FontSize="14" Margin="0,8,0,0"/>
+              <TextBlock x:Name="ReportConsistencyText" Text="Consistency: —" Foreground="#FFD5D5DC" FontSize="14" Margin="0,8,0,0"/>
+              <TextBlock x:Name="ReportQualityText" Text="Data quality: —" Foreground="{StaticResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="0,16,0,0"/>
+              <Border Background="#FF281B21" CornerRadius="8" Padding="14" Margin="0,18,0,0">
+                <StackPanel><TextBlock Text="NEXT MISSION" Foreground="#FFFF707D" FontSize="10" FontWeight="Bold"/><TextBlock x:Name="ReportMissionText" Text="—" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,7,0,0"/><TextBlock x:Name="ReportMissionWhyText" Text="" Foreground="#FFC4C4CC" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0"/></StackPanel>
+              </Border>
+            </StackPanel>
+          </Border>
+        </Grid>
+        <Grid x:Name="MissionPage" Visibility="Collapsed">
+          <StackPanel MaxWidth="760" HorizontalAlignment="Left">
+            <TextBlock Text="COACHING" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold"/>
+            <TextBlock Text="Next mission" FontSize="28" FontWeight="SemiBold" Margin="0,6,0,22"/>
+            <Border Background="#FF241A20" BorderBrush="#FF51252E" BorderThickness="1" CornerRadius="12" Padding="24">
+              <StackPanel>
+                <TextBlock Text="ONE ACTION, GROUNDED IN YOUR DATA" Foreground="#FFFF707D" FontSize="10" FontWeight="Bold"/>
+                <TextBlock x:Name="MissionPageTitle" Text="Collect your first live session" FontSize="23" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                <TextBlock x:Name="MissionPageWhy" Text="ApexAI will choose a measurable target from valid lap times and session quality." Foreground="#FFC4C4CC" FontSize="14" TextWrapping="Wrap" Margin="0,10,0,0"/>
+              </StackPanel>
+            </Border>
+            <TextBlock Text="ApexAI does not infer corner-by-corner braking, steering or tyre behaviour from this source; ACC's broadcast packets do not contain those traces." Foreground="{StaticResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="0,18,0,0"/>
+          </StackPanel>
+        </Grid>
       </Grid>
-      <DockPanel Grid.Row="3" Margin="0,17,0,0">
-        <TextBlock x:Name="TransportText" Foreground="#FF8F929D" FontSize="10" VerticalAlignment="Center" Text="Listening for ACC telemetry"/>
-        <Button DockPanel.Dock="Right" Content="Close" Click="CloseClick"/>
-        <Button DockPanel.Dock="Right" Content="Settings" Click="SettingsClick"/>
-      </DockPanel>
     </Grid>
-  </Border>
+  </Grid>
 </Window>

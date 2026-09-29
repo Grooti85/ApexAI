@@ -6,19 +6,24 @@ namespace ApexAI.Wpf;
 public partial class SettingsWindow : Window
 {
     public EngineerSettings Settings { get; private set; }
-    public string ApiKey { get; private set; } = string.Empty;
+    public string ConnectionPassword
+    {
+        get => ConnectionPasswordBox.Password;
+        set => ConnectionPasswordBox.Password = value;
+    }
+    public string CommandPassword
+    {
+        get => CommandPasswordBox.Password;
+        set => CommandPasswordBox.Password = value;
+    }
 
     public SettingsWindow(EngineerSettings settings)
     {
         InitializeComponent();
         Settings = settings;
-        ProviderBox.SelectedIndex = settings.Provider == EngineerProvider.Offline ? 0 : 1;
-        EndpointBox.Text = settings.Endpoint;
-        ModelBox.Text = settings.Model;
         PortBox.Text = settings.TelemetryPort.ToString();
         WidthBox.Text = settings.OverlayWidth.ToString("0");
         HeightBox.Text = settings.OverlayHeight.ToString("0");
-        OpacityBox.Text = settings.OverlayOpacity.ToString("0.##");
     }
 
     private void SaveClick(object sender, RoutedEventArgs e)
@@ -29,20 +34,19 @@ public partial class SettingsWindow : Window
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        if (!double.TryParse(WidthBox.Text, out var width) || width is < 520 or > 1100 ||
-            !double.TryParse(HeightBox.Text, out var height) || height is < 360 or > 800 ||
-            !double.TryParse(OpacityBox.Text, out var opacity) || opacity is < 0.65 or > 1)
+        if (!double.TryParse(WidthBox.Text, out var width) || width is < 320 or > 700 ||
+            !double.TryParse(HeightBox.Text, out var height) || height is < 160 or > 500)
         {
-            MessageBox.Show("Overlay width must be 520-1100, height 360-800, and opacity 0.65-1.",
+            MessageBox.Show("Compact overlay width must be 320-700 and height 160-500.",
                 "Invalid settings", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        Settings = new EngineerSettings(
-            ProviderBox.SelectedIndex == 1 ? EngineerProvider.OpenAiCompatible : EngineerProvider.Offline,
-            string.IsNullOrWhiteSpace(EndpointBox.Text) ? new EngineerSettings().Endpoint : EndpointBox.Text.Trim(),
-            string.IsNullOrWhiteSpace(ModelBox.Text) ? new EngineerSettings().Model : ModelBox.Text.Trim(), port,
-            width, height, opacity);
-        ApiKey = ApiKeyBox.Password;
+        Settings = Settings with
+        {
+            TelemetryPort = port,
+            OverlayWidth = width,
+            OverlayHeight = height
+        };
         DialogResult = true;
     }
 }
