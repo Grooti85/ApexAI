@@ -27,9 +27,12 @@ public sealed class DpapiSecretStore : ISecretStore
     {
         ValidateKey(key);
         var bytes = Encoding.UTF8.GetBytes(value);
-        var protectedBytes = ProtectedData.Protect(bytes, null, 0);
-        File.WriteAllBytes(Path.Combine(_directory, key + ".bin"), protectedBytes);
-        CryptographicOperations.ZeroMemory(bytes);
+        try
+        {
+            var protectedBytes = ProtectedData.Protect(bytes, null, 0);
+            File.WriteAllBytes(Path.Combine(_directory, key + ".bin"), protectedBytes);
+        }
+        finally { CryptographicOperations.ZeroMemory(bytes); }
     }
 
     public string? Get(string key)
@@ -69,18 +72,34 @@ public sealed class DpapiSecretStore : ISecretStore
         {
             var input = new Blob(data);
             var output = new Blob();
-            if (!CryptProtectData(ref input, null, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, flags, ref output))
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-            return output.ToArrayAndFree();
+            try
+            {
+                if (!CryptProtectData(ref input, null, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, flags, ref output))
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
+                return output.ToArrayAndFree();
+            }
+            finally
+            {
+                input.Free(useLocalFree: false);
+                output.Free(useLocalFree: true);
+            }
         }
 
         public static byte[] Unprotect(byte[] data, byte[]? entropy, int flags)
         {
             var input = new Blob(data);
             var output = new Blob();
-            if (!CryptUnprotectData(ref input, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, flags, ref output))
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-            return output.ToArrayAndFree();
+            try
+            {
+                if (!CryptUnprotectData(ref input, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, flags, ref output))
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
+                return output.ToArrayAndFree();
+            }
+            finally
+            {
+                input.Free(useLocalFree: false);
+                output.Free(useLocalFree: true);
+            }
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -100,8 +119,19 @@ public sealed class DpapiSecretStore : ISecretStore
             {
                 var result = new byte[Length];
                 Marshal.Copy(Data, result, 0, Length);
-                LocalFree(Data);
+                Free(useLocalFree: true);
                 return result;
+            }
+
+            public void Free(bool useLocalFree)
+            {
+                if (Data == IntPtr.Zero) return;
+                for (var index = 0; index < Length; index++)
+                    Marshal.WriteByte(Data, index, 0);
+                if (useLocalFree) LocalFree(Data);
+                else Marshal.FreeHGlobal(Data);
+                Data = IntPtr.Zero;
+                Length = 0;
             }
         }
     }

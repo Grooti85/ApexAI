@@ -51,6 +51,7 @@
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
           <Ellipse x:Name="ConnectionDot" Width="8" Height="8" Fill="#FFF13846" Margin="0,0,8,0"/>
           <TextBlock x:Name="ConnectionText" Text="WAITING FOR ACC" FontSize="11" FontWeight="Bold" Foreground="#FFF13846" VerticalAlignment="Center"/>
+          <Button Content="Set up ACC" Click="SetupAccClick"/>
           <Button Content="Show live overlay" Click="OverlayClick"/>
           <Button Content="Settings" Click="SettingsClick"/>
           <Button Content="Close" Click="CloseClick"/>
@@ -69,6 +70,7 @@
             <Button x:Name="DashboardNav" Style="{StaticResource NavButton}" Content="Overview" Click="DashboardClick"/>
             <Button x:Name="SessionsNav" Style="{StaticResource NavButton}" Content="Sessions" Click="SessionsClick"/>
             <Button x:Name="MissionNav" Style="{StaticResource NavButton}" Content="Next mission" Click="MissionClick"/>
+            <Button x:Name="MentorNav" Style="{StaticResource NavButton}" Content="AI Mentor" Click="MentorClick"/>
           </StackPanel>
           <Border DockPanel.Dock="Bottom" Background="#FF1C1D24" CornerRadius="9" Padding="12" Margin="0,18,0,0">
             <StackPanel>
@@ -174,6 +176,32 @@
             </Border>
             <TextBlock Text="ApexAI does not infer corner-by-corner braking, steering or tyre behaviour from this source; ACC's broadcast packets do not contain those traces." Foreground="{StaticResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="0,18,0,0"/>
           </StackPanel>
+        </Grid>
+        <Grid x:Name="MentorPage" Visibility="Collapsed">
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+          <StackPanel>
+            <TextBlock Text="PERSONALIZED COACHING" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold"/>
+            <TextBlock Text="AI Mentor" FontSize="28" FontWeight="SemiBold" Margin="0,6,0,4"/>
+            <TextBlock Text="Answers use your locally recorded ACC sessions and latest lap analysis. Unavailable telemetry is never invented." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+          </StackPanel>
+          <TextBox x:Name="MentorConversationBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True"
+                   TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Background="{StaticResource Surface}"
+                   Foreground="#FFF4F5F7" BorderBrush="#FF292A32" Padding="16" FontSize="13"/>
+          <TextBox x:Name="MentorInputBox" Grid.Row="2" MinHeight="76" MaxHeight="120" Margin="0,12,0,8"
+                   AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                   Background="{StaticResource SurfaceRaised}" Foreground="#FFF4F5F7" BorderBrush="#FF3A3C46"
+                   Padding="12" FontSize="13" ToolTip="Ask about recorded laps, consistency, or your next mission."/>
+          <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <TextBlock x:Name="MentorStatusText" Text="AI Mentor is offline. Configure a provider in Settings to enable chat."
+                       Foreground="{StaticResource Muted}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+              <Button x:Name="MentorCancelButton" Content="Cancel request" Click="MentorCancelClick"
+                      Padding="14,9" Margin="0,0,8,0" Visibility="Collapsed"/>
+              <Button x:Name="MentorSendButton" Content="Ask mentor" Click="MentorSendClick"
+                    Padding="18,9" Margin="0"/>
+            </StackPanel>
+          </Grid>
         </Grid>
       </Grid>
     </Grid>
