@@ -51,6 +51,7 @@
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
           <Ellipse x:Name="ConnectionDot" Width="8" Height="8" Fill="#FFF13846" Margin="0,0,8,0"/>
           <TextBlock x:Name="ConnectionText" Text="WAITING FOR ACC" FontSize="11" FontWeight="Bold" Foreground="#FFF13846" VerticalAlignment="Center"/>
+          <Button Content="Set up ACC" Click="SetupAccClick"/>
           <Button Content="Show live overlay" Click="OverlayClick"/>
           <Button Content="Settings" Click="SettingsClick"/>
           <Button Content="Close" Click="CloseClick"/>
