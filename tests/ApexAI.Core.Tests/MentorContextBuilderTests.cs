@@ -43,6 +43,7 @@ public sealed class MentorContextBuilderTests
         var context = MentorContextBuilder.Build([]);
 
         Assert.Contains("no persisted ACC sessions", context);
+        Assert.Contains("Personalized driving coaching: unavailable until ACC session telemetry has been recorded", context);
         Assert.Contains("fuel, tyre temperatures", context);
         Assert.Contains("Latest lap analysis: unavailable", context);
     }

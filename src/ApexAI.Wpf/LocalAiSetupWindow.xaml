@@ -1,0 +1,37 @@
+<Window x:Class="ApexAI.Wpf.LocalAiSetupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Set up free local AI" Width="650" Height="590" MinWidth="560" MinHeight="520"
+        WindowStartupLocation="CenterOwner" Background="#FF121318" Foreground="#FFF4F5F7">
+  <Grid Margin="24">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+      <StackPanel>
+        <TextBlock Text="FREE LOCAL AI" Foreground="#FFF13846" FontSize="11" FontWeight="Bold"/>
+        <TextBlock Text="Set up your on-device mentor" FontSize="25" FontWeight="SemiBold" Margin="0,6,0,12"/>
+        <TextBlock Text="ApexAI can install the Ollama runtime and download the Qwen 2.5 3B model. This setup is optional and starts only after you consent. Mentor requests will use this computer's local Ollama service; no account, API key, cloud AI provider, or paid AI call is used." Foreground="#FFD0D1D7" TextWrapping="Wrap"/>
+        <Border Background="#FF20212A" CornerRadius="8" Padding="14" Margin="0,14,0,10">
+          <StackPanel>
+            <TextBlock Text="REQUIREMENTS AND EXPECTATIONS" Foreground="#FFF13846" FontSize="10" FontWeight="Bold"/>
+            <TextBlock Text="64-bit Windows with an x64 AVX2-capable CPU, at least 8 GB system RAM, and 8 GB free disk space are required by this conservative setup check. The model download is about 2 GB; runtime and temporary files need additional space. This is not a performance guarantee: CPU/GPU capability and memory available to other apps affect speed. Unsupported machines cannot use this automatic setup." Foreground="#FFD0D1D7" TextWrapping="Wrap" Margin="0,7,0,0"/>
+          </StackPanel>
+        </Border>
+        <TextBlock x:Name="HardwareText" Foreground="#FFB8BBC5" TextWrapping="Wrap" Margin="0,0,0,10"/>
+        <TextBlock Text="The runtime installer is downloaded from ollama.com over HTTPS and its Windows Authenticode publisher signature is checked before it runs. Ollama downloads model layers from its registry over HTTPS and checks registry SHA-256 digests; model weights do not have a separate publisher signature. The download can be cancelled and retried. The first model run may be slow." Foreground="#FFB8BBC5" TextWrapping="Wrap"/>
+        <CheckBox x:Name="ConsentCheck" Foreground="#FFF4F5F7" Margin="0,18,0,12">
+          <TextBlock Text="I consent to downloading and installing Ollama and the Qwen 2.5 3B model on this device." TextWrapping="Wrap"/>
+        </CheckBox>
+        <TextBlock x:Name="StatusText" Text="Checking local AI setup…" Foreground="#FFD0D1D7" TextWrapping="Wrap"/>
+        <ProgressBar x:Name="SetupProgress" Height="12" Margin="0,9,0,0" Minimum="0" Maximum="100"/>
+        <TextBlock x:Name="ProgressText" Foreground="#FFB8BBC5" FontSize="11" TextWrapping="Wrap" Margin="0,5,0,0"/>
+      </StackPanel>
+    </ScrollViewer>
+    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+      <Button x:Name="CloseButton" Content="Not now" Padding="14,6" Margin="0,0,8,0" Click="NotNowClick"/>
+      <Button x:Name="SetupButton" Content="Set up free local AI" IsDefault="True" Padding="14,6" Click="SetupClick"/>
+    </StackPanel>
+  </Grid>
+</Window>

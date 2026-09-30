@@ -18,12 +18,14 @@ public static class MentorContextBuilder
                 return """
                     Recorded ACC session history: unavailable because the local session store could not be read; do not assume no sessions exist.
                     Latest lap analysis: unavailable because session history could not be read.
+                    Personalized driving coaching: unavailable until readable ACC session telemetry has been recorded.
                     Telemetry limitations: fuel, tyre temperatures, steering, brake traces, and corner-by-corner telemetry are unavailable from the supported ACC broadcast feed.
                     """;
             }
             return """
                 Recorded ACC session history: unavailable; no persisted ACC sessions have been recorded.
                 Latest lap analysis: unavailable; there are no recorded sessions.
+                Personalized driving coaching: unavailable until ACC session telemetry has been recorded; provide only clearly labeled general guidance.
                 Telemetry limitations: fuel, tyre temperatures, steering, brake traces, and corner-by-corner telemetry are unavailable from the supported ACC broadcast feed.
                 """;
         }

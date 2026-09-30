@@ -29,10 +29,28 @@ public partial class SettingsWindow : Window
         PortBox.Text = settings.TelemetryPort.ToString();
         WidthBox.Text = settings.OverlayWidth.ToString("0");
         HeightBox.Text = settings.OverlayHeight.ToString("0");
-        ProviderBox.SelectedIndex = settings.Provider == EngineerProvider.OpenAiCompatible ? 1 : 0;
-        EndpointBox.Text = settings.Endpoint;
-        ModelBox.Text = settings.Model;
+        ProviderBox.SelectedIndex = settings.Provider switch
+        {
+            EngineerProvider.Offline => 1,
+            EngineerProvider.OpenAiCompatible => 2,
+            _ => 0
+        };
+        EndpointBox.Text = settings.Provider == EngineerProvider.OpenAiCompatible ? settings.Endpoint : string.Empty;
+        ModelBox.Text = settings.Provider == EngineerProvider.OpenAiCompatible ? settings.Model : string.Empty;
         TimeoutBox.Text = settings.AiTimeoutSeconds.ToString();
+        ProviderBox.SelectionChanged += ProviderSelectionChanged;
+        UpdateProviderFields();
+    }
+
+    private void ProviderSelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e) =>
+        UpdateProviderFields();
+
+    private void UpdateProviderFields()
+    {
+        HostedProviderPanel.Visibility = ProviderBox.SelectedIndex == 2
+            ? Visibility.Visible : Visibility.Collapsed;
+        LocalProviderNote.Visibility = ProviderBox.SelectedIndex == 0
+            ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void SaveClick(object sender, RoutedEventArgs e)
@@ -50,10 +68,15 @@ public partial class SettingsWindow : Window
                 "Invalid settings", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        var provider = ProviderBox.SelectedIndex == 1
-            ? EngineerProvider.OpenAiCompatible
-            : EngineerProvider.Offline;
-        if (!int.TryParse(TimeoutBox.Text, out var timeout) || timeout is < 5 or > 180)
+        var provider = ProviderBox.SelectedIndex switch
+        {
+            1 => EngineerProvider.Offline,
+            2 => EngineerProvider.OpenAiCompatible,
+            _ => EngineerProvider.LocalOllama
+        };
+        var timeout = Settings.AiTimeoutSeconds;
+        if (provider == EngineerProvider.OpenAiCompatible &&
+            (!int.TryParse(TimeoutBox.Text, out timeout) || timeout is < 5 or > 180))
         {
             MessageBox.Show("AI request timeout must be between 5 and 180 seconds.", "Invalid settings",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -76,8 +99,10 @@ public partial class SettingsWindow : Window
             OverlayWidth = width,
             OverlayHeight = height,
             Provider = provider,
-            Endpoint = EndpointBox.Text.Trim(),
-            Model = ModelBox.Text.Trim(),
+            Endpoint = provider == EngineerProvider.LocalOllama
+                ? "http://127.0.0.1:11434/v1/chat/completions" : EndpointBox.Text.Trim(),
+            Model = provider == EngineerProvider.LocalOllama
+                ? LocalAiSetupService.ModelName : ModelBox.Text.Trim(),
             AiTimeoutSeconds = timeout
         };
         DialogResult = true;

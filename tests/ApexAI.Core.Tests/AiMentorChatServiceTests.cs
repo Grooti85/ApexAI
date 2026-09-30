@@ -39,6 +39,8 @@ public sealed class AiMentorChatServiceTests
         var messages = body.RootElement.GetProperty("messages");
         Assert.Equal("system", messages[0].GetProperty("role").GetString());
         Assert.Contains("Fuel unavailable", messages[0].GetProperty("content").GetString());
+        Assert.Contains("Personalized driving coaching requires recorded ACC session telemetry",
+            messages[0].GetProperty("content").GetString());
         Assert.Equal(4, messages.GetArrayLength());
         Assert.Equal("What should I focus on?", messages[3].GetProperty("content").GetString());
     }
@@ -62,6 +64,42 @@ public sealed class AiMentorChatServiceTests
 
         Assert.Equal("Try three clean laps.", answer);
         Assert.Null(capturedRequest!.Headers.Authorization);
+    }
+
+    [Fact]
+    public async Task LocalOllamaNeverSendsAStoredHostedProviderKey()
+    {
+        HttpRequestMessage? capturedRequest = null;
+        using var http = new HttpClient(new FakeHandler((request, _) =>
+        {
+            capturedRequest = request;
+            return Task.FromResult(JsonResponse(ValidResponse));
+        }));
+        var settings = new EngineerSettings(
+            EngineerProvider.LocalOllama, "http://127.0.0.1:11434/v1/chat/completions", "qwen2.5:3b");
+
+        await new AiMentorChatService(http, settings, "old-hosted-key").AskAsync("facts", [], "question");
+
+        Assert.Null(capturedRequest!.Headers.Authorization);
+    }
+
+    [Theory]
+    [InlineData("https://provider.example/v1/chat/completions")]
+    [InlineData("http://provider.example/v1/chat/completions")]
+    public async Task LocalOllamaRejectsNonLoopbackEndpoints(string endpoint)
+    {
+        var requestSent = false;
+        using var http = new HttpClient(new FakeHandler((_, _) =>
+        {
+            requestSent = true;
+            return Task.FromResult(JsonResponse(ValidResponse));
+        }));
+        var settings = new EngineerSettings(EngineerProvider.LocalOllama, endpoint, "qwen2.5:3b");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            new AiMentorChatService(http, settings, null).AskAsync("facts", [], "question"));
+
+        Assert.False(requestSent);
     }
 
     [Fact]
@@ -160,7 +198,8 @@ public sealed class AiMentorChatServiceTests
             Task.FromResult(JsonResponse(ValidResponse))));
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            new AiMentorChatService(http, new EngineerSettings(), null).AskAsync("facts", [], "question"));
+            new AiMentorChatService(http, new EngineerSettings(EngineerProvider.Offline), null)
+                .AskAsync("facts", [], "question"));
 
         Assert.Contains("offline", exception.Message, StringComparison.OrdinalIgnoreCase);
     }

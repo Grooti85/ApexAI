@@ -183,6 +183,8 @@
             <TextBlock Text="PERSONALIZED COACHING" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold"/>
             <TextBlock Text="AI Mentor" FontSize="28" FontWeight="SemiBold" Margin="0,6,0,4"/>
             <TextBlock Text="Answers use your locally recorded ACC sessions and latest lap analysis. Unavailable telemetry is never invented." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+            <TextBlock Text="Personalized driving coaching requires recorded ACC session telemetry. Until you record a session, the mentor can only offer clearly labeled general guidance." Foreground="#FFFFC66D" TextWrapping="Wrap" Margin="0,0,0,10"/>
+            <Button x:Name="LocalAiSetupButton" Content="Set up free local AI" Click="LocalAiSetupClick" HorizontalAlignment="Left" Margin="0,0,0,10"/>
           </StackPanel>
           <TextBox x:Name="MentorConversationBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True"
                    TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Background="{StaticResource Surface}"

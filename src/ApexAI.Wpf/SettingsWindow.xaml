@@ -12,19 +12,23 @@
       <StackPanel>
         <TextBlock Text="ApexAI settings" Foreground="White" FontSize="23" FontWeight="SemiBold" Margin="0,0,0,18"/>
         <TextBlock Text="AI Mentor provider" Foreground="#FFF13846" FontSize="14" FontWeight="Bold" Margin="0,0,0,8"/>
-        <TextBlock Text="Offline disables AI requests. OpenAI-compatible works with hosted providers and local Ollama (for example, http://localhost:11434/v1/chat/completions)." Foreground="#FFB8BBC5" TextWrapping="Wrap" Margin="0,0,0,8"/>
-        <ComboBox x:Name="ProviderBox" Padding="6" Margin="0,0,0,10" SelectedIndex="0">
-          <ComboBoxItem Content="Offline"/>
-          <ComboBoxItem Content="OpenAI-compatible"/>
+        <TextBlock Text="Local AI is the default: no account, key, or hosted call. Hosted providers are optional advanced settings and may charge you." Foreground="#FFB8BBC5" TextWrapping="Wrap" Margin="0,0,0,8"/>
+        <ComboBox x:Name="ProviderBox" Padding="6" Margin="0,0,0,10">
+          <ComboBoxItem Content="Local Ollama (recommended)"/>
+          <ComboBoxItem Content="Offline (disable AI)"/>
+          <ComboBoxItem Content="OpenAI-compatible (advanced; may cost)"/>
         </ComboBox>
-        <TextBlock Text="Chat completions endpoint" Foreground="#FFB8C5D6"/>
-        <TextBox x:Name="EndpointBox" Margin="0,4,0,8" Padding="6"/>
-        <TextBlock Text="Model name" Foreground="#FFB8C5D6"/>
-        <TextBox x:Name="ModelBox" Margin="0,4,0,8" Padding="6"/>
-        <TextBlock Text="Provider API key (stored only with Windows DPAPI; optional for local Ollama)" Foreground="#FFB8C5D6" TextWrapping="Wrap"/>
-        <PasswordBox x:Name="ApiKeyBox" Margin="0,4,0,8" Padding="6"/>
-        <TextBlock Text="Request timeout (5-180 seconds)" Foreground="#FFB8C5D6"/>
-        <TextBox x:Name="TimeoutBox" Margin="0,4,0,18" Padding="6"/>
+        <TextBlock x:Name="LocalProviderNote" Text="ApexAI's first-run setup can install Ollama and download Qwen 2.5 3B after you consent. Chat stays on this computer." Foreground="#FFB8BBC5" TextWrapping="Wrap" Margin="0,0,0,16"/>
+        <StackPanel x:Name="HostedProviderPanel" Visibility="Collapsed">
+          <TextBlock Text="Hosted chat completions endpoint (HTTPS)" Foreground="#FFB8C5D6"/>
+          <TextBox x:Name="EndpointBox" Margin="0,4,0,8" Padding="6"/>
+          <TextBlock Text="Provider model name" Foreground="#FFB8C5D6"/>
+          <TextBox x:Name="ModelBox" Margin="0,4,0,8" Padding="6"/>
+          <TextBlock Text="Provider API key (stored only with Windows DPAPI)" Foreground="#FFB8C5D6" TextWrapping="Wrap"/>
+          <PasswordBox x:Name="ApiKeyBox" Margin="0,4,0,8" Padding="6"/>
+          <TextBlock Text="Request timeout (5-180 seconds)" Foreground="#FFB8C5D6"/>
+          <TextBox x:Name="TimeoutBox" Margin="0,4,0,18" Padding="6"/>
+        </StackPanel>
         <TextBlock Text="ACC broadcasting client" Foreground="#FFF13846" FontSize="14" FontWeight="Bold" Margin="0,0,0,8"/>
         <TextBlock Text="ACC UDP port (must match broadcasting.json)" Foreground="#FFB8C5D6"/>
         <TextBox x:Name="PortBox" Margin="0,4,0,8" Padding="6"/>
