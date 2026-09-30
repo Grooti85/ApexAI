@@ -17,14 +17,14 @@ public sealed record RaceState(
     DateTimeOffset Timestamp,
     SessionPhase Phase,
     int LapNumber,
-    double LapProgress,
-    double SpeedKph,
-    double FuelLiters,
-    double FuelPerLapLiters,
-    double TyreTemperatureCelsius,
-    bool IsOffTrack,
-    bool HasIncident,
-    bool IsInPitLane,
+    double? LapProgress,
+    double? SpeedKph,
+    double? FuelLiters,
+    double? FuelPerLapLiters,
+    double? TyreTemperatureCelsius,
+    bool? IsOffTrack,
+    bool? HasIncident,
+    bool? IsInPitLane,
     bool IsConnected);
 
 public sealed record RaceEvent(

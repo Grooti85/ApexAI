@@ -22,17 +22,22 @@ public sealed class RaceEventDetector
             events.Add(Create(RaceEventType.SessionConnected, current, "Telemetry connected."));
         if (_previous is not null && current.LapNumber > _previous.LapNumber)
             events.Add(Create(RaceEventType.LapCompleted, current, $"Lap {_previous.LapNumber} completed."));
-        if (current.IsOffTrack && !(_previous?.IsOffTrack ?? false))
+        if (current.IsOffTrack == true && _previous?.IsOffTrack != true)
             events.Add(Create(RaceEventType.OffTrack, current, "Track limits: get back on line.", 2));
-        if (current.HasIncident && !(_previous?.HasIncident ?? false))
+        if (current.HasIncident == true && _previous?.HasIncident != true)
             events.Add(Create(RaceEventType.Incident, current, "Incident detected. Stay focused.", 1));
-        var lowFuel = current.FuelPerLapLiters > 0 && current.FuelLiters / current.FuelPerLapLiters <= _lowFuelLaps;
-        var wasLowFuel = _previous is not null && _previous.FuelPerLapLiters > 0 &&
-                         _previous.FuelLiters / _previous.FuelPerLapLiters <= _lowFuelLaps;
+        var lowFuel = current.FuelPerLapLiters is double fuelPerLap && fuelPerLap > 0 &&
+                      current.FuelLiters is double fuel && fuel / fuelPerLap <= _lowFuelLaps;
+        var wasLowFuel = _previous is not null &&
+                         _previous.FuelPerLapLiters is double previousFuelPerLap && previousFuelPerLap > 0 &&
+                         _previous.FuelLiters is double previousFuel &&
+                         previousFuel / previousFuelPerLap <= _lowFuelLaps;
         if (lowFuel && !wasLowFuel)
             events.Add(Create(RaceEventType.LowFuel, current, "Fuel target is low: pit strategy required.", 1));
-        if (current.TyreTemperatureCelsius >= _highTyreTemperature &&
-            (_previous is null || _previous.TyreTemperatureCelsius < _highTyreTemperature))
+        if (current.TyreTemperatureCelsius is double tyreTemperature &&
+            tyreTemperature >= _highTyreTemperature &&
+            (_previous?.TyreTemperatureCelsius is not double previousTyreTemperature ||
+             previousTyreTemperature < _highTyreTemperature))
             events.Add(Create(RaceEventType.TyreTemperatureHigh, current, "Tyres are overheating; protect the fronts.", 2));
         if (current.Phase == SessionPhase.Finished &&
             _previous?.Phase != SessionPhase.Finished)

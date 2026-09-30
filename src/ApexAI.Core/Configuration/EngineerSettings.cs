@@ -9,8 +9,8 @@ public sealed record EngineerSettings(
     string Endpoint = "https://api.openai.com/v1/chat/completions",
     string Model = "gpt-4o-mini",
     int TelemetryPort = 9000,
-    double OverlayWidth = 680,
-    double OverlayHeight = 460,
+    double OverlayWidth = 390,
+    double OverlayHeight = 185,
     double OverlayOpacity = 0.94);
 
 public sealed class EngineerSettingsStore
